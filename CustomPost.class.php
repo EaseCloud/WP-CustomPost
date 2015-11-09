@@ -170,6 +170,29 @@ class CustomPost {
 
     }
 
+    /**
+     * 列表查询
+     * @param array $args
+     * @param bool|false $raw
+     * @return array
+     * @link: https://wordpress.org/search/get_posts
+     */
+    static function query($args=array(), $raw=false) {
+        $args = array_merge($args, array(
+            'post_type' => static::$post_type
+        ));
+        $posts = get_posts($args);
+        if($raw) {
+            return $posts;
+        } else {
+            $result = array();
+            foreach($posts as $p) {
+                $result []= new static($p);
+            }
+            return $result;
+        }
+    }
+
 }
 
 
@@ -425,6 +448,29 @@ class CustomUserType {
         }
     }
 
+    /**
+     * 查询出一个用户对象的列表
+     * @param array $args
+     * @param bool|false $raw
+     * @return array
+     * @link: https://wordpress.org/search/get_users
+     */
+    static function query($args=array(), $raw=false) {
+        $args = array_merge($args, array(
+            'role' => static::$role
+        ));
+        $users = get_users($args);
+        if($raw) {
+            return $users;
+        } else {
+            $result = array();
+            foreach($users as $u) {
+                $result []= new static($u);
+            }
+            return $result;
+        }
+    }
+
     function delete() {
         require_once( ABSPATH.'wp-admin/includes/user.php' );
         wp_delete_user($this->user->ID);
@@ -447,7 +493,9 @@ class CustomP2PType {
     static $cardinality = 'many-to-many';  // 连接对应模式
     static $reciprocal = false;  // 是否对等关系（无向边）
     static $duplicate_connections = false;  // 是否支持重边
-    static $fields = array();  // array(key => title)
+    static $fields = array();  // array(key => val) val: (str)title or
+        // array(title=>?, type=>?, values=>?, default=>?, default_cb=>(callback))
+        // @link: https://github.com/scribu/wp-posts-to-posts/wiki/Connection-metadata
     static $admin_box = array(
         'show' => 'any',  // any | from | to
         'context' => 'side',  // side | advanced
@@ -464,8 +512,7 @@ class CustomP2PType {
      * 根据获取的 p2p 关联对象构造自定义
      * @param $object
      */
-    function __construct($object)
-    {
+    function __construct($object) {
         if (is_numeric($object) || is_string($object)) {
             $this->p2p_id = intval($object);
         } elseif (@$object->p2p_id) {
@@ -565,12 +612,36 @@ class CustomP2PType {
         );
     }
 
+    /**
+     * Return a list of connection objects from a related object.
+     * @param $item
+     * @param $direction
+     * @return array: resulting CustomP2PType object list.
+     */
+    static function getList($item, $direction='auto') {
+        if(!in_array($direction, array('from', 'to'))) {
+            $to_class = static::$to_class;
+            $direction = $item instanceof $to_class ? 'to' : 'from';
+        }
+        $item_class = $direction == 'from' ?
+            static::$to_class : static::$from_class;
+        $items = $item_class::query(array(
+            'connected_type' => static::$p2p_type,
+            'connected_items' => static::extract($item),
+            'connected_direction' => $direction,
+        ));
+        $result = array();
+        foreach($items as $item) {
+            $result []= new static(static::extract($item)->p2p_id);
+        }
+        return $result;
+    }
+
     function delete() {
         static::disconnect($this->from, $this->to);
     }
 
 }
-
 
 
 // ---------------------------------------------------------------
