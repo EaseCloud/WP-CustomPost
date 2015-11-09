@@ -21,7 +21,7 @@ class CustomPost {
     /** 构造函数
      * @param $post
      */
-    public function __construct($post) {
+    function __construct($post) {
 
         // 构造 $post 对象
         if($post instanceof WP_Post) {
@@ -41,17 +41,17 @@ class CustomPost {
 
     }
 
-    public function __toString() {
+    function __toString() {
         return strval($this->post->post_title);
     }
 
     // 执行动态属性的读写为 post_meta 的读写
-    public function __get($key) {
+    function __get($key) {
         return get_post_meta($this->post->ID, $key, true);
     }
 
     // 执行动态属性的读写为 post_meta 的读写
-    public function __set($key, $val) {
+    function __set($key, $val) {
         update_post_meta($this->post->ID, $key, $val);
     }
 
@@ -63,7 +63,7 @@ class CustomPost {
     }
 
     // 获取当前商品的特色图像，如果没有设置返回默认图。
-    public function getThumbnailUrl() {
+    function getThumbnailUrl() {
         $img_id = get_post_thumbnail_id($this->post->ID);
         if(!$img_id) return get_template_directory_uri().'/images/thumbnail.png';
         $img = wp_get_attachment_image_src($img_id, 'full');
@@ -130,7 +130,7 @@ class CustomPost {
      * @return array 如果指定了 $taxonomy，返回一个 CustomTaxonomy 的纯数组
      * 如果没有指定，根据 $taxonomy 的别名分别指定数据返回
      */
-    public function terms($taxonomy=null) {
+    function terms($taxonomy=null) {
 
         // CustomTaxonomy 子类分析
         $classes = array();
@@ -171,6 +171,10 @@ class CustomPost {
 }
 
 
+/**
+ * Class CustomTaxonomy
+ * 自定义分类法
+ */
 class CustomTaxonomy {
 
     // 配置选项（继承时必须填入这些属性）
@@ -188,7 +192,7 @@ class CustomTaxonomy {
     /** 构造函数
      * @param $term
      */
-    public function __construct($term) {
+    function __construct($term) {
 
         // 构造 $term 对象
         if($term instanceof stdClass && $term->term_id) {
@@ -270,7 +274,7 @@ class CustomTaxonomy {
      * @return array 如果指定了 $post_type，返回一个对应的对象列表
      *      如果没有指定 $post_type，根据搜索到的 $post_type 返回一个关联所有分类的对象列表
      */
-    public function posts($post_type=null) {
+    function posts($post_type=null) {
 
         $tax = get_taxonomy(static::$taxonomy);
 
@@ -319,10 +323,13 @@ class CustomTaxonomy {
 
 };
 
-
+/**
+ * Class CustomUserType
+ * 自定义用户类型（依赖 role 角色）
+ */
 class CustomUserType {
 
-    static $role;
+    static $role = '*';  // Accept role_name or '*'
     static $display_name;
     static $capabilities = array('read');
 
@@ -331,18 +338,24 @@ class CustomUserType {
     function __construct($user) {
         if($user instanceof WP_User) {
             $this->user = $user;
+        } elseif(is_numeric($user) || is_string($user)) {
+            $this->user = get_user_by('id', intval($user))
+                ?: get_user_by('login', $user)
+                ?: get_user_by('slug', $user)
+                ?: get_user_by('email', $user);
         } else {
-            $this->user = new WP_User(intval($user));
+            wp_die(__('User construction error!'));
         }
+        // TODO: 这里还要校验用户的角色是否正确
     }
 
     // 执行动态属性的读写为 user_meta 的读写
-    public function __get($key) {
+    function __get($key) {
         return get_user_meta($this->user->ID, $key, true);
     }
 
     // 执行动态属性的读写为 user_meta 的读写
-    public function __set($key, $val) {
+    function __set($key, $val) {
         update_user_meta($this->user->ID, $key, $val);
     }
 
@@ -365,6 +378,37 @@ class CustomUserType {
                 );
             }
         });
+    }
+
+    static function create($user_login, $user_pass=null,
+                           $user_email=null, $extra=array()) {
+
+        $class = get_called_class();
+
+        // 缺省自动生成 email 和密码
+        if(!$user_email) {
+            preg_match('/^(?:https?:\/\/)?([^\/]+)/', home_url(), $match);
+            $host = @$match[1] ?: 'wordpress.org';
+            $user_email = "{$user_login}@{$host}";
+        }
+        $user_pass = $user_pass ?: wp_generate_password();
+        $role = $class::$role;
+        $user = wp_insert_user(array_merge(compact(
+            'user_pass', 'user_login', 'user_email', 'role'
+        ), $extra));
+
+        // 如果用户创建成功，返回创建的 CustomUserType 对象
+        if(!is_wp_error($user)) {
+            return new $class($user);
+        } else {
+            wp_die($user);
+            return false;
+        }
+    }
+
+    function delete() {
+        // TODO: 未实现
+        wp_delete_user($this->user->ID);
     }
 
 }
