@@ -447,10 +447,10 @@ class CustomP2PType {
     static $cardinality = 'many-to-many';  // 连接对应模式
     static $reciprocal = false;  // 是否对等关系（无向边）
     static $duplicate_connections = false;  // 是否支持重边
-    static $fields = array();
+    static $fields = array();  // array(key => title)
     static $admin_box = array(
         'show' => 'any',  // any | from | to
-        'context' => '',  // side | advanced
+        'context' => 'side',  // side | advanced
     );
 
     // 私有属性
