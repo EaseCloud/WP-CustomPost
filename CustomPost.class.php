@@ -322,10 +322,11 @@ class CustomTaxonomy {
 
 class CustomUserType {
 
-    static $role = 'subscriber';
+    static $role;
+    static $display_name;
+    static $capabilities = array('read');
 
     public $user;
-
 
     function __construct($user) {
         if($user instanceof WP_User) {
@@ -350,7 +351,20 @@ class CustomUserType {
     }
 
     static function init() {
-
+        $class = get_called_class();
+        add_action('init', function() use ($class) {
+            if(WP_DEBUG) {
+                // 调试模式下总是刷新角色
+                remove_role($class::$role);
+            }
+            if(!get_role($class::$role)) {
+                add_role(
+                    $class::$role,
+                    $class::$display_name,
+                    $class::$capabilities
+                );
+            }
+        });
     }
 
 }
@@ -419,8 +433,6 @@ class CustomP2PType {
 
         add_action('p2p_init', function() use ($class) {
 
-            // 狗被用户 Kiss 的关系
-            // Relations about dogs being kissed
             p2p_register_connection_type(array(
                 'name' => $class::$p2p_type,
                 'from' => $class::$from_type,
