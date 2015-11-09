@@ -14,4 +14,11 @@ Text Domain: wp_custom_post
 
 define('WCP_DOMAIN', 'wp_custom_post');
 
+/**
+ * 翻译支持
+ */
+add_action('plugins_loaded', function() {
+    load_textdomain(WCP_DOMAIN, __DIR__.'/languages/zh_CN.mo');
+});
+
 require_once 'CustomPost.class.php';

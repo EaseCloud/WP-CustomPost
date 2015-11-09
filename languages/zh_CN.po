@@ -1,0 +1,87 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: wp-custom0post\n"
+"POT-Creation-Date: 2015-11-09 14:25+0800\n"
+"PO-Revision-Date: 2015-11-09 14:26+0800\n"
+"Last-Translator: Alfred Huang <57082212@qq.com>\n"
+"Language-Team: Easecloud <admin@easecloud.cn>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.8.4\n"
+"X-Poedit-Basepath: ..\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: CustomPost.class.php:39
+msgid "Constructing post type in not correct, should be of type: "
+msgstr "构造的 post 类型不正确，应为："
+
+#: CustomPost.class.php:90 CustomPost.class.php:239 CustomPost.class.php:240
+msgid "Parent "
+msgstr "父"
+
+#: CustomPost.class.php:91 CustomPost.class.php:238
+msgid "All "
+msgstr "所有"
+
+#: CustomPost.class.php:92
+msgid "View "
+msgstr "查看"
+
+#: CustomPost.class.php:93 CustomPost.class.php:94 CustomPost.class.php:243
+#: CustomPost.class.php:244
+msgid "Add "
+msgstr "添加"
+
+#: CustomPost.class.php:95 CustomPost.class.php:241
+msgid "Edit "
+msgstr "编辑"
+
+#: CustomPost.class.php:96 CustomPost.class.php:242
+msgid "Update"
+msgstr "更新"
+
+#: CustomPost.class.php:97 CustomPost.class.php:237
+msgid "Search "
+msgstr "查找"
+
+#: CustomPost.class.php:98
+msgid "There is no data here."
+msgstr "这里没有任何东西"
+
+#: CustomPost.class.php:99
+msgid "No items in trash."
+msgstr "回收站是空的"
+
+#: CustomPost.class.php:155
+msgid "Specified CustomTaxonomy not found."
+msgstr "找不到指定的 CustomTaxonomy 自定义分类法。"
+
+#: CustomPost.class.php:208
+msgid "Constructing term type is not correct, should be of ["
+msgstr "构造的  term  类型不正确，应当属于“"
+
+#: CustomPost.class.php:209
+msgid "] taxonomy."
+msgstr "”分类法。"
+
+#: CustomPost.class.php:296
+msgid "Specified CustomPost not found."
+msgstr "没有找到指定的 CustomPost 自定义 Post 类型。"
+
+#: CustomPost.class.php:397
+msgid "The given object is not a valid p2p object."
+msgstr "传入构造的对象不是一个合法的 p2p 对象"
+
+#~ msgid "构造的 post 类型不符，应为 "
+#~ msgstr "构造的 post 类型不符，应为 "
+
+#~ msgid "传入构造的对象不是一个合法的 p2p 对象"
+#~ msgstr "传入构造的对象不是一个合法的 p2p 对象"
+
+#~ msgid "没有找到定义的关联 CustomPost 子类。"
+#~ msgstr "没有找到定义的关联 CustomPost 子类。"

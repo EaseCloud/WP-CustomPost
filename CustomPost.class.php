@@ -3,7 +3,6 @@
 /**
  * 自定义类，派生使用，派生时需要写入 static 参数进行配置。
  * 然后需要调用子类的 init 方法。
- * TODO: 需要添加翻译
  */
 class CustomPost {
 
@@ -36,7 +35,8 @@ class CustomPost {
         // 校验 $post 的类型
         assert(
             $this->post && $this->post->post_type == static::$post_type,
-            __('构造的 post 类型不符，应为 '.static::$post_type.' 类型的 post。', WCP_DOMAIN)
+            __('Constructing post type in not correct, should be of type: ', WCP_DOMAIN)
+            .static::$post_type
         );
 
     }
@@ -151,7 +151,7 @@ class CustomPost {
         // 如果指定了 $taxonomy，校验完整性
         assert(
             !$taxonomy || sizeof($taxonomy) === 1,
-            __('没有找到定义的关联 CustomTaxonomy 子类。', WCP_DOMAIN)
+            __('Specified CustomTaxonomy not found.', WCP_DOMAIN)
         );
 
         // 逐个 post_type 进行查询
@@ -204,7 +204,8 @@ class CustomTaxonomy {
 
         assert(
             $this->term && $this->term->taxonomy == static::$taxonomy,
-            __('构造的 term 类型不符，应为 '.static::$taxonomy.' 类型的 term。', WCP_DOMAIN)
+            __('Constructing term type is not correct, should be of [', WCP_DOMAIN)
+            .static::$taxonomy.__('] taxonomy.', WCP_DOMAIN)
         );
 
     }
@@ -291,7 +292,7 @@ class CustomTaxonomy {
         // 如果指定了 $post_type，校验完整性
         assert(
             !$post_type || sizeof($classes) === 1,
-            __('没有找到定义的关联 CustomPost 子类。', WCP_DOMAIN)
+            __('Specified CustomPost not found.', WCP_DOMAIN)
         );
 
         // 逐个 post_type 进行查询
@@ -390,7 +391,10 @@ class CustomP2PType {
         if(is_numeric($object) || is_string($object)) {
             $this->p2p_id = intval($object);
         } else {
-            assert($object->p2p_id, __('传入构造的对象不是一个合法的 p2p 对象', WCP_DOMAIN));
+            assert(
+                $object->p2p_id,
+                __('The given object is not a valid p2p object.', WCP_DOMAIN)
+            );
             $this->p2p_id = $object->p2p_id;
         }
         $conn = p2p_get_connection($this->p2p_id);
