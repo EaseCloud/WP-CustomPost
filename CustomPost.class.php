@@ -33,11 +33,12 @@ class CustomPost {
         }
 
         // 校验 $post 的类型
-        assert(
-            $this->post && $this->post->post_type == static::$post_type,
-            __('Constructing post type in not correct, should be of type: ', WCP_DOMAIN)
-            .static::$post_type
-        );
+        if(!$this->post || $this->post->post_type !== static::$post_type) {
+            wp_die(
+                __('Constructing post type in not correct, should be of type: ', WCP_DOMAIN)
+                .static::$post_type
+            );
+        }
 
     }
 
@@ -149,10 +150,11 @@ class CustomPost {
         }
 
         // 如果指定了 $taxonomy，校验完整性
-        assert(
-            !$taxonomy || sizeof($taxonomy) === 1,
-            __('Specified CustomTaxonomy not found.', WCP_DOMAIN)
-        );
+        if($taxonomy && sizeof($taxonomy) !== 1) {
+            wp_die(
+                __('Specified CustomTaxonomy not found.', WCP_DOMAIN)
+            );
+        }
 
         // 逐个 post_type 进行查询
         $result = array();
@@ -206,11 +208,12 @@ class CustomTaxonomy {
             $this->term = get_term_by('slug', $term, static::$taxonomy);
         }
 
-        assert(
-            $this->term && $this->term->taxonomy == static::$taxonomy,
-            __('Constructing term type is not correct, should be of [', WCP_DOMAIN)
-            .static::$taxonomy.__('] taxonomy.', WCP_DOMAIN)
-        );
+        if(!$this->term || $this->term->taxonomy !== static::$taxonomy) {
+            die(
+                __('Constructing term type is not correct, should be of [', WCP_DOMAIN)
+                .static::$taxonomy.__('] taxonomy.', WCP_DOMAIN)
+            );
+        }
 
     }
 
@@ -267,7 +270,6 @@ class CustomTaxonomy {
         )));
     }
 
-
     /**
      * 获取当前分类法上面的所有匹配的 post
      * @param string $post_type 指定的 post 类名或者 post_type 名称
@@ -294,10 +296,9 @@ class CustomTaxonomy {
         }
 
         // 如果指定了 $post_type，校验完整性
-        assert(
-            !$post_type || sizeof($classes) === 1,
-            __('Specified CustomPost not found.', WCP_DOMAIN)
-        );
+        if($post_type && sizeof($classes !== 1)) {
+            wp_die(__('Specified CustomPost not found.', WCP_DOMAIN));
+        }
 
         // 逐个 post_type 进行查询
         $result = array();
@@ -329,13 +330,14 @@ class CustomTaxonomy {
  */
 class CustomUserType {
 
-    static $role = '*';  // Accept role_name or '*'
+    static $role = null;  // Accept role_name or null
     static $display_name;
     static $capabilities = array('read');
 
     public $user;
 
     function __construct($user) {
+
         if($user instanceof WP_User) {
             $this->user = $user;
         } elseif(is_numeric($user) || is_string($user)) {
@@ -344,9 +346,16 @@ class CustomUserType {
                 ?: get_user_by('slug', $user)
                 ?: get_user_by('email', $user);
         } else {
-            wp_die(__('User construction error!'));
+            wp_die(__('User construction error!', WCP_DOMAIN));
         }
-        // TODO: 这里还要校验用户的角色是否正确
+
+        if(static::$role && static::$role !== $this->user->roles[0]) {
+            wp_die(
+                __('Construct user role is not correct, should be:', WCP_DOMAIN)
+                .static::$role
+            );
+        }
+
     }
 
     // 执行动态属性的读写为 user_meta 的读写
@@ -380,10 +389,20 @@ class CustomUserType {
         });
     }
 
+    /**
+     * Create a user of the current specified role
+     * @param string $user_login
+     * @param string $user_pass
+     * @param string $user_email
+     * @param array $extra: Allowed keys :
+     *      user_nicename | user_url | display_name | nickname |
+     *      first_name | last_name | description | rich_editing |
+     *      user_registered
+     * @return CustomUserType|bool
+     * @link https://codex.wordpress.org/Function_Reference/wp_insert_user
+     */
     static function create($user_login, $user_pass=null,
                            $user_email=null, $extra=array()) {
-
-        $class = get_called_class();
 
         // 缺省自动生成 email 和密码
         if(!$user_email) {
@@ -392,14 +411,14 @@ class CustomUserType {
             $user_email = "{$user_login}@{$host}";
         }
         $user_pass = $user_pass ?: wp_generate_password();
-        $role = $class::$role;
+        $role = static::$role;
         $user = wp_insert_user(array_merge(compact(
             'user_pass', 'user_login', 'user_email', 'role'
         ), $extra));
 
         // 如果用户创建成功，返回创建的 CustomUserType 对象
         if(!is_wp_error($user)) {
-            return new $class($user);
+            return new static($user);
         } else {
             wp_die($user);
             return false;
@@ -407,7 +426,7 @@ class CustomUserType {
     }
 
     function delete() {
-        // TODO: 未实现
+        require_once( ABSPATH.'wp-admin/includes/user.php' );
         wp_delete_user($this->user->ID);
     }
 
@@ -445,15 +464,16 @@ class CustomP2PType {
      * 根据获取的 p2p 关联对象构造自定义
      * @param $object
      */
-    function __construct($object) {
-        if(is_numeric($object) || is_string($object)) {
+    function __construct($object)
+    {
+        if (is_numeric($object) || is_string($object)) {
             $this->p2p_id = intval($object);
+        } elseif (@$object->p2p_id) {
+            $this->p2p_id = $object->p2p_id;
         } else {
-            assert(
-                $object->p2p_id,
+            wp_die(
                 __('The given object is not a valid p2p object.', WCP_DOMAIN)
             );
-            $this->p2p_id = $object->p2p_id;
         }
         $conn = p2p_get_connection($this->p2p_id);
         $this->from = new static::$from_class(intval($conn->p2p_from));
@@ -516,12 +536,11 @@ class CustomP2PType {
      * @return bool|CustomP2PType
      */
     static function get($from, $to) {
-        $class = get_called_class();
         $p2p_id = static::getType()->get_p2p_id(
             static::extract($from),
             static::extract($to)
         );
-        return $p2p_id ? new $class(intval($p2p_id)) : false;
+        return $p2p_id ? new static(intval($p2p_id)) : false;
     }
 
     /**
