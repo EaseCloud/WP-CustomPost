@@ -28,8 +28,9 @@ class CustomPost {
             // 直接使用 post 对象构造的情况
             $this->post = $post;
         } else {
-            // 使用 post_ID 构造的情况
-            $this->post = get_post($post);
+            // 使用 slug | post_ID 构造的情况
+            $this->post = get_page_by_path($post, OBJECT, static::$post_type)
+                ?: get_post($post);
         }
 
         // 校验 $post 的类型
