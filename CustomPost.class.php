@@ -256,7 +256,7 @@ class CustomTaxonomy {
         add_action('init', function() use ($class) {
 
             register_taxonomy($class::$taxonomy, $class::$post_types, array(
-                'hierarchical' => $class::hierarchical,
+                'hierarchical' => $class::$hierarchical,
                 'show_ui' => $class::$show_ui,
                 'show_admin_column' => $class::$show_admin_column,
                 'query_var' => true,
