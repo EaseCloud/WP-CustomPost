@@ -211,6 +211,7 @@ class CustomTaxonomy {
     public static $capabilities = array();
     public static $show_ui = true;
     public static $show_admin_column = true;
+    public static $hierarchical = true;  // 分类是否支持层级
 
     // 实有成员
     public $term;
@@ -255,7 +256,7 @@ class CustomTaxonomy {
         add_action('init', function() use ($class) {
 
             register_taxonomy($class::$taxonomy, $class::$post_types, array(
-                'hierarchical' => true, // $class::$hierarchical,
+                'hierarchical' => $class::hierarchical,
                 'show_ui' => $class::$show_ui,
                 'show_admin_column' => $class::$show_admin_column,
                 'query_var' => true,
