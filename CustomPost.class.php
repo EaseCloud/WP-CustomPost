@@ -58,6 +58,31 @@ class CustomPost {
     }
 
     /**
+     * 插入一片此类型的文章
+     * @param string $title
+     * @param string $slug
+     * @param string $content
+     * @param array $meta_fields
+     * @param string $status
+     * @return CustomPost 返回插入成功之后的对象
+     */
+    static function insert($title, $slug, $content, $meta_fields, $status='publish') {
+        $post_id = wp_insert_post(array(
+            'post_title' => $title,
+            'post_name' => $slug,
+            'post_content' => $content,
+            'post_type' => static::$post_type,
+            'post_status' => $status,
+        ));
+        if(is_wp_error($post_id)) wp_die($post_id);
+        $result = new static($post_id);
+        foreach($meta_fields as $key => $val) {
+            $result->$key = $val;
+        }
+        return $result;
+    }
+
+    /**
      * 获取当前 Post 的作者 User 对象
      */
     function getAuthor() {
