@@ -20,8 +20,9 @@ class CustomPost {
 
     /** 构造函数
      * @param $post
+     * @param $silence bool 是否不提示错误
      */
-    function __construct($post) {
+    function __construct($post, $silence=false) {
 
         // 构造 $post 对象
         if($post instanceof WP_Post) {
@@ -34,7 +35,7 @@ class CustomPost {
         }
 
         // 校验 $post 的类型
-        if(!$this->post || $this->post->post_type !== static::$post_type) {
+        if(!$silence && (!$this->post || $this->post->post_type !== static::$post_type)) {
             wp_die(
                 __('Constructing post type in not correct, should be of type: ', WCP_DOMAIN)
                 .static::$post_type
