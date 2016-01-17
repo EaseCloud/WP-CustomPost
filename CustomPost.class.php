@@ -52,7 +52,9 @@ class CustomPost {
 
     // 执行动态属性的读写为 post_meta 的读写
     function __get($key) {
-        return get_post_meta($this->post->ID, $key, true);
+        $value = get_post_meta($this->post->ID, $key, true);
+        if($value === null) $value = @$this->post->$key;
+        return $value;
     }
 
     // 执行动态属性的读写为 post_meta 的读写
