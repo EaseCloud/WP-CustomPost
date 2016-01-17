@@ -28,6 +28,8 @@ class CustomPost {
         if($post instanceof WP_Post) {
             // 直接使用 post 对象构造的情况
             $this->post = $post;
+        } elseif(!$post) {
+            $this->post = null;
         } else {
             // 使用 slug | post_ID 构造的情况
             $this->post = get_page_by_path($post, OBJECT, static::$post_type)
@@ -79,6 +81,21 @@ class CustomPost {
         $result = new static($post_id);
         foreach($meta_fields as $key => $val) {
             $result->$key = $val;
+        }
+        // 初始化 acf 的字段引用绑定
+        foreach (get_posts(array('post_type' => 'acf', 'posts_per_page' => -1)) as $acf) {
+            $meta = get_post_meta($acf->ID);
+            $rule = unserialize($meta['rule'][0]);
+            if($rule['param'] == 'post_type' &&
+                $rule['operator'] == '==' &&
+                $rule['value'] == static::$post_type) {
+                foreach($meta as $key => $field) {
+                    if(substr($key, 0, 6) == 'field_') {
+                        $field = unserialize($field[0]);
+                        update_post_meta($post_id, '_'.$field['name'], $key);
+                    }
+                }
+            }
         }
         return $result;
     }
