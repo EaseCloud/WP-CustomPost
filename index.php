@@ -17,6 +17,10 @@ define('WCP_DOMAIN', 'wp_custom_post');
 /**
  * 翻译支持
  */
-load_textdomain(WCP_DOMAIN, __DIR__.'/languages/zh_CN.mo');
+load_plugin_textdomain(
+    WCP_DOMAIN,
+    false,
+    plugin_basename(dirname(__FILE__)).'/languages'
+);
 
 require_once 'CustomPost.class.php';
