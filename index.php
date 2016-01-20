@@ -17,10 +17,12 @@ define('WCP_DOMAIN', 'wp_custom_post');
 /**
  * 翻译支持
  */
-load_plugin_textdomain(
-    WCP_DOMAIN,
-    false,
-    plugin_basename(dirname(__FILE__)).'/languages'
-);
+add_action('plugins_loaded', function() {
+    load_plugin_textdomain(
+        WCP_DOMAIN,
+        false,
+        plugin_basename(dirname(__FILE__)).'/languages'
+    );
+});
 
 require_once 'CustomPost.class.php';

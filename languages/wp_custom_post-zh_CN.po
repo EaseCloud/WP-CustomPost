@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: wp-custom0post\n"
-"POT-Creation-Date: 2016-01-20 15:55+0800\n"
-"PO-Revision-Date: 2016-01-20 15:55+0800\n"
+"POT-Creation-Date: 2016-01-20 16:17+0800\n"
+"PO-Revision-Date: 2016-01-20 16:44+0800\n"
 "Last-Translator: Alfred Huang <57082212@qq.com>\n"
 "Language-Team: Easecloud <admin@easecloud.cn>\n"
 "Language: zh_CN\n"
@@ -88,6 +88,10 @@ msgstr "传入构造的对象不是一个合法的 p2p 对象"
 #: CustomPost.class.php:592
 msgid "Posts 2 Posts plugin is required."
 msgstr "尚未安装 Posts 2 Posts 插件。"
+
+#: index.php:27
+msgid "ohhh"
+msgstr "这是什么"
 
 #~ msgid "die in a good style"
 #~ msgstr "死要死得好看"
