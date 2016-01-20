@@ -588,6 +588,10 @@ class CustomP2PType {
     // Register the type
     static function init() {
 
+        if(!function_exists('p2p_register_connection_type')) {
+            wp_die(__('Posts 2 Posts plugin is required.'));
+        }
+
         $class = get_called_class();
 
         add_action('p2p_init', function() use ($class) {
