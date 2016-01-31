@@ -9,6 +9,7 @@ class CustomPost {
     // 配置选项（继承时必须填入这些属性）
     public static $post_type;
     public static $post_type_name;
+    public static $post_type_name_plural;
     public static $post_type_description = '';
     public static $post_type_supports =
         array('title', 'thumbnail', 'excerpt', 'editor', 'comments');
@@ -20,13 +21,16 @@ class CustomPost {
 
     /** 构造函数
      * @param $post
+     * @param $silence bool 是否不提示错误
      */
-    function __construct($post) {
+    function __construct($post, $silence=false) {
 
         // 构造 $post 对象
         if($post instanceof WP_Post) {
             // 直接使用 post 对象构造的情况
             $this->post = $post;
+        } elseif(!$post) {
+            $this->post = null;
         } else {
             // 使用 slug | post_ID 构造的情况
             $this->post = get_page_by_path($post, OBJECT, static::$post_type)
@@ -34,7 +38,7 @@ class CustomPost {
         }
 
         // 校验 $post 的类型
-        if(!$this->post || $this->post->post_type !== static::$post_type) {
+        if(!$silence && (!$this->post || $this->post->post_type !== static::$post_type)) {
             wp_die(
                 __('Constructing post type in not correct, should be of type: ', WCP_DOMAIN)
                 .static::$post_type
@@ -49,12 +53,54 @@ class CustomPost {
 
     // 执行动态属性的读写为 post_meta 的读写
     function __get($key) {
-        return get_post_meta($this->post->ID, $key, true);
+        $value = get_post_meta($this->post->ID, $key, true);
+        if($value === null) $value = @$this->post->$key;
+        return $value;
     }
 
     // 执行动态属性的读写为 post_meta 的读写
     function __set($key, $val) {
         update_post_meta($this->post->ID, $key, $val);
+    }
+
+    /**
+     * 插入一片此类型的文章
+     * @param string $title
+     * @param string $slug
+     * @param string $content
+     * @param array $meta_fields
+     * @param string $status
+     * @return CustomPost 返回插入成功之后的对象
+     */
+    static function insert($title, $slug, $content, $meta_fields, $status='publish') {
+        $post_id = wp_insert_post(array(
+            'post_title' => $title,
+            'post_name' => $slug,
+            'post_content' => $content,
+            'post_type' => static::$post_type,
+            'post_status' => $status,
+        ));
+        if(is_wp_error($post_id)) wp_die($post_id);
+        $result = new static($post_id);
+        foreach($meta_fields as $key => $val) {
+            $result->$key = $val;
+        }
+        // 初始化 acf 的字段引用绑定
+        foreach (get_posts(array('post_type' => 'acf', 'posts_per_page' => -1)) as $acf) {
+            $meta = get_post_meta($acf->ID);
+            $rule = unserialize($meta['rule'][0]);
+            if($rule['param'] == 'post_type' &&
+                $rule['operator'] == '==' &&
+                $rule['value'] == static::$post_type) {
+                foreach($meta as $key => $field) {
+                    if(substr($key, 0, 6) == 'field_') {
+                        $field = unserialize($field[0]);
+                        update_post_meta($post_id, '_'.$field['name'], $key);
+                    }
+                }
+            }
+        }
+        return $result;
     }
 
     /**
@@ -541,6 +587,10 @@ class CustomP2PType {
 
     // Register the type
     static function init() {
+
+        if(!function_exists('p2p_register_connection_type')) {
+            wp_die(__('Posts 2 Posts plugin is required.'));
+        }
 
         $class = get_called_class();
 

@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: wp-custom0post\n"
-"POT-Creation-Date: 2015-11-09 16:30+0800\n"
-"PO-Revision-Date: 2015-11-09 16:30+0800\n"
+"POT-Creation-Date: 2016-01-20 16:17+0800\n"
+"PO-Revision-Date: 2016-01-20 16:44+0800\n"
 "Last-Translator: Alfred Huang <57082212@qq.com>\n"
 "Language-Team: Easecloud <admin@easecloud.cn>\n"
 "Language: zh_CN\n"
@@ -16,74 +16,85 @@ msgstr ""
 "X-Poedit-KeywordsList: __;_e\n"
 "X-Poedit-SearchPath-0: .\n"
 
-#: CustomPost.class.php:38
+#: CustomPost.class.php:43
 msgid "Constructing post type in not correct, should be of type: "
 msgstr "构造的 post 类型不正确，应为："
 
-#: CustomPost.class.php:90 CustomPost.class.php:245 CustomPost.class.php:246
+#: CustomPost.class.php:137 CustomPost.class.php:316 CustomPost.class.php:317
 msgid "Parent "
 msgstr "父"
 
-#: CustomPost.class.php:91 CustomPost.class.php:244
+#: CustomPost.class.php:138 CustomPost.class.php:315
 msgid "All "
 msgstr "所有"
 
-#: CustomPost.class.php:92
+#: CustomPost.class.php:139
 msgid "View "
 msgstr "查看"
 
-#: CustomPost.class.php:93 CustomPost.class.php:94 CustomPost.class.php:249
-#: CustomPost.class.php:250
+#: CustomPost.class.php:140 CustomPost.class.php:141 CustomPost.class.php:320
+#: CustomPost.class.php:321
 msgid "Add "
 msgstr "添加"
 
-#: CustomPost.class.php:95 CustomPost.class.php:247
+#: CustomPost.class.php:142 CustomPost.class.php:318
 msgid "Edit "
 msgstr "编辑"
 
-#: CustomPost.class.php:96 CustomPost.class.php:248
+#: CustomPost.class.php:143 CustomPost.class.php:319
 msgid "Update"
 msgstr "更新"
 
-#: CustomPost.class.php:97 CustomPost.class.php:243
+#: CustomPost.class.php:144 CustomPost.class.php:314
 msgid "Search "
 msgstr "查找"
 
-#: CustomPost.class.php:98
+#: CustomPost.class.php:145
 msgid "There is no data here."
 msgstr "这里没有任何东西"
 
-#: CustomPost.class.php:99
+#: CustomPost.class.php:146
 msgid "No items in trash."
 msgstr "回收站是空的"
 
-#: CustomPost.class.php:155
+#: CustomPost.class.php:202
 msgid "Specified CustomTaxonomy not found."
 msgstr "找不到指定的 CustomTaxonomy 自定义分类法。"
 
-#: CustomPost.class.php:213
+#: CustomPost.class.php:284
 msgid "Constructing term type is not correct, should be of ["
 msgstr "构造的  term  类型不正确，应当属于“"
 
-#: CustomPost.class.php:214
+#: CustomPost.class.php:285
 msgid "] taxonomy."
 msgstr "”分类法。"
 
-#: CustomPost.class.php:300
+#: CustomPost.class.php:371
 msgid "Specified CustomPost not found."
 msgstr "没有找到指定的 CustomPost 自定义 Post 类型。"
 
-#: CustomPost.class.php:349
+#: CustomPost.class.php:420
 msgid "User construction error!"
 msgstr "用户构造出错！"
 
-#: CustomPost.class.php:354
+#: CustomPost.class.php:425
 msgid "Construct user role is not correct, should be:"
 msgstr "构造的用户角色不正确，应为："
 
-#: CustomPost.class.php:475
+#: CustomPost.class.php:570
 msgid "The given object is not a valid p2p object."
 msgstr "传入构造的对象不是一个合法的 p2p 对象"
+
+#: CustomPost.class.php:592
+msgid "Posts 2 Posts plugin is required."
+msgstr "尚未安装 Posts 2 Posts 插件。"
+
+#: index.php:27
+msgid "ohhh"
+msgstr "这是什么"
+
+#~ msgid "die in a good style"
+#~ msgstr "死要死得好看"
 
 #~ msgid "构造的 post 类型不符，应为 "
 #~ msgstr "构造的 post 类型不符，应为 "
