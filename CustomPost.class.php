@@ -631,6 +631,7 @@ class CustomP2PType {
             'connected_type' => static::$p2p_type,
             'connected_items' => static::extract($item),
             'connected_direction' => $direction,
+            'posts_per_page' =>  -1,
         ));
         $result = array();
         foreach($items as $item) {
