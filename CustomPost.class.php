@@ -268,7 +268,7 @@ class CustomTaxonomy {
     function __construct($term) {
 
         // 构造 $term 对象
-        if($term instanceof stdClass && $term->term_id) {
+        if(($term instanceof stdClass || $term instanceof WP_Term) && $term->term_id) {
             // 直接使用 term 对象构造的情况
             $this->term = $term;
         } elseif (is_int($term)) {
