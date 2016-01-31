@@ -217,6 +217,23 @@ class CustomPost {
 
     }
 
+
+    /**
+     * 返回当前 post 对象是否具备某一个 term
+     * @param $term
+     * @return mixed
+     */
+    function hasTerm($term, $tax) {
+        // 兼容各种输入类型
+        $term = @$term->term_id ?: @$term->term->term_id ?: $term;
+        foreach($this->terms($tax) as $_term) {
+            $_term = @$_term->term_id ?: @$_term->term->term_id ?: $_term;
+            if($term == $_term) return true;
+        }
+        return false;
+    }
+
+
     /**
      * 列表查询
      * @param array $args
