@@ -544,6 +544,10 @@ class CustomUserType {
 }
 
 
+/**
+ * Class CustomP2PType
+ * 自定义的 Posts 2 Posts 类型
+ */
 class CustomP2PType {
 
     // 配置属性，应在子类重写
@@ -687,7 +691,7 @@ class CustomP2PType {
      * @param $direction
      * @return array: resulting CustomP2PType object list.
      */
-    static function getList($item, $direction='auto') {
+    static function getList($item, $direction='auto', $connected_meta=array()) {
         if(!in_array($direction, array('from', 'to'))) {
             $to_class = static::$to_class;
             $direction = $item instanceof $to_class ? 'to' : 'from';
@@ -698,6 +702,7 @@ class CustomP2PType {
             'connected_type' => static::$p2p_type,
             'connected_items' => static::extract($item),
             'connected_direction' => $direction,
+            'connected_meta' => $connected_meta,
             'posts_per_page' =>  -1,
         ));
         $result = array();
@@ -729,5 +734,6 @@ class CustomP2PType {
 class Page extends CustomPost {
     static $post_type = 'page';
 };
+
 
 
