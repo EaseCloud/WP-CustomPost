@@ -309,6 +309,13 @@ class CustomTaxonomy {
         return strval($this->term->name);
     }
 
+    /**
+     * 获取当前分类的超链接
+     */
+    function getPermalink() {
+        get_category_link($this->term->term_id);
+    }
+
     // 初始化脚本，完成 taxonomy 注册等工作，派生该类之后，如果需要使用必须手动先执行一次
     public static function init() {
 
@@ -736,4 +743,16 @@ class Page extends CustomPost {
 };
 
 
+/**
+ * Class Category
+ */
+class Category extends CustomTaxonomy {
+    static $taxonomy = 'category';
+};
 
+/**
+ * Class PostTag
+ */
+class PostTag extends CustomTaxonomy {
+    static $taxonomy = 'post_tag';
+};
