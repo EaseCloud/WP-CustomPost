@@ -316,6 +316,22 @@ class CustomTaxonomy {
         return get_category_link($this->term->term_id);
     }
 
+    /**
+     * 获取当前分类的子分类
+     * @return CustomTaxonomy[]
+     */
+    function children() {
+        $terms = get_terms(static::$taxonomy, array(
+            'parent' => $this->term->term_id,
+            'hide_empty' => false
+        ));
+        $result = array();
+        foreach($terms as $term) {
+            $result []= new static($term);
+        }
+        return $result;
+    }
+
     // 初始化脚本，完成 taxonomy 注册等工作，派生该类之后，如果需要使用必须手动先执行一次
     public static function init() {
 
