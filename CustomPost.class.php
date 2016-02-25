@@ -332,6 +332,29 @@ class CustomTaxonomy {
         return $result;
     }
 
+    /**
+     * 获取当前分类的父分类
+     * @return CustomTaxonomy|null
+     */
+    function parent() {
+        if($this->term->parent) {
+            return new static($this->term->parent);
+        }
+        return null;
+    }
+
+    /**
+     * 获取当前分类的根节点分类
+     * @return CustomTaxonomy|null
+     */
+    function getRootNode() {
+        $tax = $this;
+        while($tax->term->parent) {
+            $tax = $tax->parent();
+        }
+        return $tax;
+    }
+
     // 初始化脚本，完成 taxonomy 注册等工作，派生该类之后，如果需要使用必须手动先执行一次
     public static function init() {
 
