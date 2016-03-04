@@ -7,7 +7,7 @@
 class CustomPost {
 
     // 配置选项（继承时必须填入这些属性）
-    public static $post_type;
+    public static $post_type = 'post';
     public static $post_type_name;
     public static $post_type_name_plural;
     public static $post_type_description = '';
