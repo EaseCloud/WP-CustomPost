@@ -238,7 +238,7 @@ class CustomPost {
      * 列表查询
      * @param array $args
      * @param bool|false $raw
-     * @return array
+     * @return static[]
      * @link: https://wordpress.org/search/get_posts
      */
     static function query($args=array(), $raw=false) {
@@ -424,7 +424,7 @@ class CustomUserType {
 
     public $user;
 
-    function __construct($user) {
+    function __construct($user, $silence=false) {
 
         if($user instanceof WP_User) {
             $this->user = $user;
@@ -437,7 +437,7 @@ class CustomUserType {
             wp_die(__('User construction error!', WCP_DOMAIN));
         }
 
-        if(static::$role && static::$role !== $this->user->roles[0]) {
+        if(!$silence && static::$role && static::$role !== $this->user->roles[0]) {
             wp_die(
                 __('Construct user role is not correct, should be:', WCP_DOMAIN)
                 .static::$role
