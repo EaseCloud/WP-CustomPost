@@ -7,7 +7,7 @@
 class CustomPost {
 
     // 配置选项（继承时必须填入这些属性）
-    public static $post_type;
+    public static $post_type = 'post';
     public static $post_type_name;
     public static $post_type_name_plural;
     public static $post_type_description = '';
@@ -307,6 +307,52 @@ class CustomTaxonomy {
 
     function __toString() {
         return strval($this->term->name);
+    }
+
+    /**
+     * 获取当前分类的超链接
+     */
+    function getPermalink() {
+        return get_category_link($this->term->term_id);
+    }
+
+    /**
+     * 获取当前分类的子分类
+     * @return CustomTaxonomy[]
+     */
+    function children() {
+        $terms = get_terms(static::$taxonomy, array(
+            'parent' => $this->term->term_id,
+            'hide_empty' => false
+        ));
+        $result = array();
+        foreach($terms as $term) {
+            $result []= new static($term);
+        }
+        return $result;
+    }
+
+    /**
+     * 获取当前分类的父分类
+     * @return CustomTaxonomy|null
+     */
+    function parent() {
+        if($this->term->parent) {
+            return new static($this->term->parent);
+        }
+        return null;
+    }
+
+    /**
+     * 获取当前分类的根节点分类
+     * @return CustomTaxonomy|null
+     */
+    function getRootNode() {
+        $tax = $this;
+        while($tax->term->parent) {
+            $tax = $tax->parent();
+        }
+        return $tax;
     }
 
     // 初始化脚本，完成 taxonomy 注册等工作，派生该类之后，如果需要使用必须手动先执行一次
@@ -736,4 +782,16 @@ class Page extends CustomPost {
 };
 
 
+/**
+ * Class Category
+ */
+class Category extends CustomTaxonomy {
+    static $taxonomy = 'category';
+};
 
+/**
+ * Class PostTag
+ */
+class PostTag extends CustomTaxonomy {
+    static $taxonomy = 'post_tag';
+};
