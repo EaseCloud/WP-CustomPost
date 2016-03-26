@@ -4,7 +4,8 @@
  * 自定义类，派生使用，派生时需要写入 static 参数进行配置。
  * 然后需要调用子类的 init 方法。
  */
-class CustomPost {
+class CustomPost
+{
 
     // 配置选项（继承时必须填入这些属性）
     public static $post_type = 'post';
@@ -16,6 +17,25 @@ class CustomPost {
     public static $menu_icon = 'dashicons-admin-post';
     public static $capabilities = array();
 
+    /**
+     * @var array
+     * @ref ref: https://developer.wordpress.org/reference/functions/add_meta_box/
+     */
+    public static $meta_boxes = array(
+//        'the-meta-box-id' => array(
+//            'title' => 'the-meta-box-title',
+//            'callback' => 'function', // callback to inject the metabox content
+//            'screen' => null, // See the @ref
+//            'context' => 'advanced', // normal | side | advanced
+//            'priority' => 'default', // default | high | low
+//            'callback_args' => null, // See the @ref
+//            'callback_submit' => 'callback',  // callback on admin save post
+//                     See hook save_post_$post_type
+//                     https://developer.wordpress.org/reference/hooks/save_post/
+//                     do_action('save_post', int $post_id, WP_Post $post, bool $update)
+//        ),
+    );
+
     // 实有成员
     public $post;
 
@@ -23,13 +43,14 @@ class CustomPost {
      * @param $post
      * @param $silence bool 是否不提示错误
      */
-    function __construct($post, $silence=false) {
+    function __construct($post, $silence = false)
+    {
 
         // 构造 $post 对象
-        if($post instanceof WP_Post) {
+        if ($post instanceof WP_Post) {
             // 直接使用 post 对象构造的情况
             $this->post = $post;
-        } elseif(!$post) {
+        } elseif (!$post) {
             $this->post = null;
         } else {
             // 使用 slug | post_ID 构造的情况
@@ -38,28 +59,31 @@ class CustomPost {
         }
 
         // 校验 $post 的类型
-        if(!$silence && (!$this->post || $this->post->post_type !== static::$post_type)) {
+        if (!$silence && (!$this->post || $this->post->post_type !== static::$post_type)) {
             wp_die(
                 __('Constructing post type in not correct, should be of type: ', WCP_DOMAIN)
-                .static::$post_type
+                . static::$post_type
             );
         }
 
     }
 
-    function __toString() {
+    function __toString()
+    {
         return strval($this->post->post_title);
     }
 
     // 执行动态属性的读写为 post_meta 的读写
-    function __get($key) {
+    function __get($key)
+    {
         $value = get_post_meta($this->post->ID, $key, true);
-        if($value === null) $value = @$this->post->$key;
+        if ($value === null) $value = @$this->post->$key;
         return $value;
     }
 
     // 执行动态属性的读写为 post_meta 的读写
-    function __set($key, $val) {
+    function __set($key, $val)
+    {
         update_post_meta($this->post->ID, $key, $val);
     }
 
@@ -72,7 +96,8 @@ class CustomPost {
      * @param string $status
      * @return CustomPost 返回插入成功之后的对象
      */
-    static function insert($title, $slug, $content, $meta_fields, $status='publish') {
+    static function insert($title, $slug, $content, $meta_fields, $status = 'publish')
+    {
         $post_id = wp_insert_post(array(
             'post_title' => $title,
             'post_name' => $slug,
@@ -80,22 +105,23 @@ class CustomPost {
             'post_type' => static::$post_type,
             'post_status' => $status,
         ));
-        if(is_wp_error($post_id)) wp_die($post_id);
+        if (is_wp_error($post_id)) wp_die($post_id);
         $result = new static($post_id);
-        foreach($meta_fields as $key => $val) {
+        foreach ($meta_fields as $key => $val) {
             $result->$key = $val;
         }
         // 初始化 acf 的字段引用绑定
         foreach (get_posts(array('post_type' => 'acf', 'posts_per_page' => -1)) as $acf) {
             $meta = get_post_meta($acf->ID);
             $rule = unserialize($meta['rule'][0]);
-            if($rule['param'] == 'post_type' &&
+            if ($rule['param'] == 'post_type' &&
                 $rule['operator'] == '==' &&
-                $rule['value'] == static::$post_type) {
-                foreach($meta as $key => $field) {
-                    if(substr($key, 0, 6) == 'field_') {
+                $rule['value'] == static::$post_type
+            ) {
+                foreach ($meta as $key => $field) {
+                    if (substr($key, 0, 6) == 'field_') {
                         $field = unserialize($field[0]);
-                        update_post_meta($post_id, '_'.$field['name'], $key);
+                        update_post_meta($post_id, '_' . $field['name'], $key);
                     }
                 }
             }
@@ -106,68 +132,102 @@ class CustomPost {
     /**
      * 获取当前 Post 的作者 User 对象
      */
-    function getAuthor() {
+    function getAuthor()
+    {
         return new WP_User($this->post->post_author);
     }
 
     // 获取当前商品的特色图像，如果没有设置返回默认图。
-    function getThumbnailUrl() {
+    function getThumbnailUrl()
+    {
         $img_id = get_post_thumbnail_id($this->post->ID);
-        if(!$img_id) return get_template_directory_uri().'/images/thumbnail.png';
+        if (!$img_id) return get_template_directory_uri() . '/images/thumbnail.png';
         $img = wp_get_attachment_image_src($img_id, 'full');
         return $img[0];
     }
 
     // 初始化脚本，完成 post_type 注册等工作，派生该类之后，如果需要使用必须手动先执行一次
-    public static function init() {
+    public static function init()
+    {
 
         // 需要获取调用的子类
         $class = get_called_class();
 
         // 需要调入闭包的变量
-        add_action('init', function() use ($class) {
+        add_action('init', function () use ($class) {
 
-            register_post_type($class::$post_type, array(
-                'label' => $class::$post_type_name,
-                'description' => $class::$post_type_description,
-                'labels' => array(
-                    'name' => $class::$post_type_name,
-                    'singular_name' => $class::$post_type_name,
-                    'menu_name' => $class::$post_type_name,
-                    'parent_item_colon'   => __('Parent ', WCP_DOMAIN).$class::$post_type_name,
-                    'all_items' => __('All ', WCP_DOMAIN).$class::$post_type_name_plural,
-                    'view_item' => __('View ', WCP_DOMAIN),
-                    'add_new_item' => __('Add ', WCP_DOMAIN).$class::$post_type_name,
-                    'add_new' => __('Add ', WCP_DOMAIN).$class::$post_type_name,
-                    'edit_item' => __('Edit ', WCP_DOMAIN).$class::$post_type_name,
-                    'update_item' => __('Update', WCP_DOMAIN),
-                    'search_items' => __('Search ', WCP_DOMAIN).$class::$post_type_name,
-                    'not_found' => __('There is no data here.', WCP_DOMAIN),
-                    'not_found_in_trash' => __('No items in trash.', WCP_DOMAIN),
-                ),
-                'supports' => $class::$post_type_supports,
+            // register post_type if not exists
+            if (!post_type_exists($class::$post_type)) {
+
+                register_post_type($class::$post_type, array(
+                    'label' => $class::$post_type_name,
+                    'description' => $class::$post_type_description,
+                    'labels' => array(
+                        'name' => $class::$post_type_name,
+                        'singular_name' => $class::$post_type_name,
+                        'menu_name' => $class::$post_type_name,
+                        'parent_item_colon' => __('Parent ', WCP_DOMAIN) . $class::$post_type_name,
+                        'all_items' => __('All ', WCP_DOMAIN) . $class::$post_type_name_plural,
+                        'view_item' => __('View ', WCP_DOMAIN),
+                        'add_new_item' => __('Add ', WCP_DOMAIN) . $class::$post_type_name,
+                        'add_new' => __('Add ', WCP_DOMAIN) . $class::$post_type_name,
+                        'edit_item' => __('Edit ', WCP_DOMAIN) . $class::$post_type_name,
+                        'update_item' => __('Update', WCP_DOMAIN),
+                        'search_items' => __('Search ', WCP_DOMAIN) . $class::$post_type_name,
+                        'not_found' => __('There is no data here.', WCP_DOMAIN),
+                        'not_found_in_trash' => __('No items in trash.', WCP_DOMAIN),
+                    ),
+                    'supports' => $class::$post_type_supports,
 //                'taxonomies' => array('region', 'industry'),
-                'hierarchical' => false,
-                'public' => true,
-                'show_ui' => true,
-                'show_in_menu' => true,
-                'show_in_nav_menus' => true,
-                'show_in_admin_bar' => true,
-                'menu_position' => 5,
-                'can_export' => true,
-                'has_archive' => true,
-                'exclude_from_search' => false,
-                'publicly_queryable' => true,
-                'menu_icon' => $class::$menu_icon,
-                'rewrite' => array(
-                    'slug' => $class::$post_type,
-                    'with_front' => true,
-                ),
+                    'hierarchical' => false,
+                    'public' => true,
+                    'show_ui' => true,
+                    'show_in_menu' => true,
+                    'show_in_nav_menus' => true,
+                    'show_in_admin_bar' => true,
+                    'menu_position' => 5,
+                    'can_export' => true,
+                    'has_archive' => true,
+                    'exclude_from_search' => false,
+                    'publicly_queryable' => true,
+                    'menu_icon' => $class::$menu_icon,
+                    'rewrite' => array(
+                        'slug' => $class::$post_type,
+                        'with_front' => true,
+                    ),
 //                'capability_type' => $class::$post_type,
-                'capabilities' => $class::$capabilities,
-            ));
+                    'capabilities' => $class::$capabilities,
+                ));
+
+            }
 
         }, 10, 0);
+
+        // register the post_type meta_boxes
+        foreach ($class::$meta_boxes as $meta_box_id => $args) {
+
+            add_action(
+                'add_meta_boxes_' . $class::$post_type,
+                function ($post) use ($class, $meta_box_id, $args) {
+                    add_meta_box(
+                        $meta_box_id,
+                        @$args['title'] ?: __('Meta box', WCP_DOMAIN),
+                        @$args['callback'] ?: null,
+                        @$args['screen'] ?: null,
+                        @$args['context'] ?: 'advanced',
+                        @$args['priority'] ?: 'default',
+                        @$args['callback_args'] ?: null
+                    );
+
+                }
+            );
+
+            // Todo: 尚未精确判断，只有后台发送保存指令时才执行
+            // dealing with metabox submit
+            if (isset($args['callback_submit'])) {
+                add_action('save_post_' . $class::$post_type, $args['callback_submit'], 18, 3);
+            }
+        }
 
     }
 
@@ -178,26 +238,28 @@ class CustomPost {
      * @return array 如果指定了 $taxonomy，返回一个 CustomTaxonomy 的纯数组
      * 如果没有指定，根据 $taxonomy 的别名分别指定数据返回
      */
-    function terms($taxonomy=null) {
+    function terms($taxonomy = null)
+    {
 
         // CustomTaxonomy 子类分析
         $classes = array();
-        foreach(get_declared_classes() as $cls) {
+        foreach (get_declared_classes() as $cls) {
             // 找到所有 CustomTaxonomy 的子类
-            if(is_subclass_of($cls, 'CustomTaxonomy')) {
+            if (is_subclass_of($cls, 'CustomTaxonomy')) {
                 $tax = get_taxonomy($cls::$taxonomy);
                 // 校验指定的 $post_type 是否与当前 taxonomy 关联
-                if(!in_array(static::$post_type, $tax->object_type)) continue;
+                if (!in_array(static::$post_type, $tax->object_type)) continue;
                 // 如果指定了 $post_type，跳过所有不匹配的部分
-                if($taxonomy && $taxonomy != $cls &&
-                    $taxonomy != $cls::$taxonomy) continue;
+                if ($taxonomy && $taxonomy != $cls &&
+                    $taxonomy != $cls::$taxonomy
+                ) continue;
 
-                $classes []= $cls;
+                $classes [] = $cls;
             }
         }
 
         // 如果指定了 $taxonomy，校验完整性
-        if($taxonomy && sizeof($taxonomy) !== 1) {
+        if ($taxonomy && sizeof($taxonomy) !== 1) {
             wp_die(
                 __('Specified CustomTaxonomy not found.', WCP_DOMAIN)
             );
@@ -206,8 +268,8 @@ class CustomPost {
         // 逐个 post_type 进行查询
         $result = array();
 
-        foreach($classes as $cls) {
-            $result[$cls::$taxonomy] = array_map(function($term) use ($cls) {
+        foreach ($classes as $cls) {
+            $result[$cls::$taxonomy] = array_map(function ($term) use ($cls) {
                 return new $cls($term);
             }, get_the_terms($this->post, $cls::$taxonomy)
             );
@@ -223,12 +285,13 @@ class CustomPost {
      * @param $term
      * @return mixed
      */
-    function hasTerm($term, $tax) {
+    function hasTerm($term, $tax)
+    {
         // 兼容各种输入类型
         $term = @$term->term_id ?: @$term->term->term_id ?: $term;
-        foreach($this->terms($tax) as $_term) {
+        foreach ($this->terms($tax) as $_term) {
             $_term = @$_term->term_id ?: @$_term->term->term_id ?: $_term;
-            if($term == $_term) return true;
+            if ($term == $_term) return true;
         }
         return false;
     }
@@ -241,17 +304,18 @@ class CustomPost {
      * @return static[]
      * @link: https://wordpress.org/search/get_posts
      */
-    static function query($args=array(), $raw=false) {
+    static function query($args = array(), $raw = false)
+    {
         $args = array_merge($args, array(
             'post_type' => static::$post_type
         ));
         $posts = get_posts($args);
-        if($raw) {
+        if ($raw) {
             return $posts;
         } else {
             $result = array();
-            foreach($posts as $p) {
-                $result []= new static($p);
+            foreach ($posts as $p) {
+                $result [] = new static($p);
             }
             return $result;
         }
@@ -264,7 +328,8 @@ class CustomPost {
  * Class CustomTaxonomy
  * 自定义分类法
  */
-class CustomTaxonomy {
+class CustomTaxonomy
+{
 
     // 配置选项（继承时必须填入这些属性）
     public static $taxonomy;  // tax 的别名
@@ -282,10 +347,11 @@ class CustomTaxonomy {
     /** 构造函数
      * @param $term
      */
-    function __construct($term) {
+    function __construct($term)
+    {
 
         // 构造 $term 对象
-        if(($term instanceof stdClass || $term instanceof WP_Term) && $term->term_id) {
+        if (($term instanceof stdClass || $term instanceof WP_Term) && $term->term_id) {
             // 直接使用 term 对象构造的情况
             $this->term = $term;
         } elseif (is_int($term)) {
@@ -296,23 +362,25 @@ class CustomTaxonomy {
             $this->term = get_term_by('slug', $term, static::$taxonomy);
         }
 
-        if(!$this->term || $this->term->taxonomy !== static::$taxonomy) {
+        if (!$this->term || $this->term->taxonomy !== static::$taxonomy) {
             die(
                 __('Constructing term type is not correct, should be of [', WCP_DOMAIN)
-                .static::$taxonomy.__('] taxonomy.', WCP_DOMAIN)
+                . static::$taxonomy . __('] taxonomy.', WCP_DOMAIN)
             );
         }
 
     }
 
-    function __toString() {
+    function __toString()
+    {
         return strval($this->term->name);
     }
 
     /**
      * 获取当前分类的超链接
      */
-    function getPermalink() {
+    function getPermalink()
+    {
         return get_category_link($this->term->term_id);
     }
 
@@ -320,14 +388,15 @@ class CustomTaxonomy {
      * 获取当前分类的子分类
      * @return CustomTaxonomy[]
      */
-    function children() {
+    function children()
+    {
         $terms = get_terms(static::$taxonomy, array(
             'parent' => $this->term->term_id,
             'hide_empty' => false
         ));
         $result = array();
-        foreach($terms as $term) {
-            $result []= new static($term);
+        foreach ($terms as $term) {
+            $result [] = new static($term);
         }
         return $result;
     }
@@ -336,8 +405,9 @@ class CustomTaxonomy {
      * 获取当前分类的父分类
      * @return CustomTaxonomy|null
      */
-    function parent() {
-        if($this->term->parent) {
+    function parent()
+    {
+        if ($this->term->parent) {
             return new static($this->term->parent);
         }
         return null;
@@ -347,22 +417,24 @@ class CustomTaxonomy {
      * 获取当前分类的根节点分类
      * @return CustomTaxonomy|null
      */
-    function getRootNode() {
+    function getRootNode()
+    {
         $tax = $this;
-        while($tax->term->parent) {
+        while ($tax->term->parent) {
             $tax = $tax->parent();
         }
         return $tax;
     }
 
     // 初始化脚本，完成 taxonomy 注册等工作，派生该类之后，如果需要使用必须手动先执行一次
-    public static function init() {
+    public static function init()
+    {
 
         // 需要获取调用的子类
         $class = get_called_class();
 
         // 需要调入闭包的变量
-        add_action('init', function() use ($class) {
+        add_action('init', function () use ($class) {
 
             register_taxonomy($class::$taxonomy, $class::$post_types, array(
                 'hierarchical' => $class::$hierarchical,
@@ -374,14 +446,14 @@ class CustomTaxonomy {
                 'labels' => array(
                     'name' => $class::$taxonomy_name,
                     'singular_name' => $class::$taxonomy_name,
-                    'search_items' => __('Search ', WCP_DOMAIN).$class::$taxonomy_name,
-                    'all_items' => __('All ', WCP_DOMAIN).$class::$taxonomy_name_plural,
-                    'parent_item' => __('Parent ', WCP_DOMAIN).$class::$taxonomy_name,
-                    'parent_item_colon'   => __('Parent ', WCP_DOMAIN).$class::$taxonomy_name,
-                    'edit_item' => __('Edit ', WCP_DOMAIN).$class::$taxonomy_name,
+                    'search_items' => __('Search ', WCP_DOMAIN) . $class::$taxonomy_name,
+                    'all_items' => __('All ', WCP_DOMAIN) . $class::$taxonomy_name_plural,
+                    'parent_item' => __('Parent ', WCP_DOMAIN) . $class::$taxonomy_name,
+                    'parent_item_colon' => __('Parent ', WCP_DOMAIN) . $class::$taxonomy_name,
+                    'edit_item' => __('Edit ', WCP_DOMAIN) . $class::$taxonomy_name,
                     'update_item' => __('Update', WCP_DOMAIN),
-                    'add_new_item' => __('Add ', WCP_DOMAIN).$class::$taxonomy_name,
-                    'new_item_name' => __('Add ', WCP_DOMAIN).$class::$taxonomy_name,
+                    'add_new_item' => __('Add ', WCP_DOMAIN) . $class::$taxonomy_name,
+                    'new_item_name' => __('Add ', WCP_DOMAIN) . $class::$taxonomy_name,
                     'menu_name' => $class::$taxonomy_name,
                 ),
             ));
@@ -395,9 +467,10 @@ class CustomTaxonomy {
      * 返回当前定义的 Taxonomy 的所有实例
      * @return CustomTaxonomy[]
      */
-    public static function all() {
+    public static function all()
+    {
         $cls = get_called_class();
-        return array_map(function($term) use ($cls) {
+        return array_map(function ($term) use ($cls) {
             return new $cls($term);
         }, get_terms($cls::$taxonomy, array(
             'hide_empty' => false,
@@ -410,35 +483,37 @@ class CustomTaxonomy {
      * @return array 如果指定了 $post_type，返回一个对应的对象列表
      *      如果没有指定 $post_type，根据搜索到的 $post_type 返回一个关联所有分类的对象列表
      */
-    function posts($post_type=null) {
+    function posts($post_type = null)
+    {
 
         $tax = get_taxonomy(static::$taxonomy);
 
         // CustomPost 子类分析
         $classes = array();
-        foreach(get_declared_classes() as $cls) {
+        foreach (get_declared_classes() as $cls) {
             // 找到所有 CustomPost 的子类
-            if(is_subclass_of($cls, 'CustomPost')) {
+            if (is_subclass_of($cls, 'CustomPost')) {
                 // 校验指定的 $post_type 是否与当前 taxonomy 关联
-                if(!in_array($cls::$post_type, $tax->object_type)) continue;
+                if (!in_array($cls::$post_type, $tax->object_type)) continue;
                 // 如果指定了 $post_type，跳过所有不匹配的部分
-                if($post_type && $post_type != $cls &&
-                    $post_type != $cls::$post_type) continue;
+                if ($post_type && $post_type != $cls &&
+                    $post_type != $cls::$post_type
+                ) continue;
 
-                $classes []= $cls;
+                $classes [] = $cls;
             }
         }
 
         // 如果指定了 $post_type，校验完整性
-        if($post_type && sizeof($classes !== 1)) {
+        if ($post_type && sizeof($classes !== 1)) {
             wp_die(__('Specified CustomPost not found.', WCP_DOMAIN));
         }
 
         // 逐个 post_type 进行查询
         $result = array();
 
-        foreach($classes as $cls) {
-            $result[$cls::$post_type] = array_map(function($post) use ($cls) {
+        foreach ($classes as $cls) {
+            $result[$cls::$post_type] = array_map(function ($post) use ($cls) {
                 return new $cls($post);
             }, get_posts(array(
                 'posts_per_page' => -1,
@@ -456,13 +531,16 @@ class CustomTaxonomy {
         return $post_type ? $result[$classes[0]::$post_type] : $result;
     }
 
-};
+}
+
+;
 
 /**
  * Class CustomUserType
  * 自定义用户类型（依赖 role 角色）
  */
-class CustomUserType {
+class CustomUserType
+{
 
     static $role = null;  // Accept role_name or null
     static $display_name;
@@ -470,50 +548,55 @@ class CustomUserType {
 
     public $user;
 
-    function __construct($user, $silence=false) {
+    function __construct($user, $silence = false)
+    {
 
-        if($user instanceof WP_User) {
+        if ($user instanceof WP_User) {
             $this->user = $user;
-        } elseif(is_numeric($user) || is_string($user)) {
+        } elseif (is_numeric($user) || is_string($user)) {
             $this->user = get_user_by('id', intval($user))
                 ?: get_user_by('login', $user)
-                ?: get_user_by('slug', $user)
-                ?: get_user_by('email', $user);
+                    ?: get_user_by('slug', $user)
+                        ?: get_user_by('email', $user);
         } else {
             wp_die(__('User construction error!', WCP_DOMAIN));
         }
 
-        if(!$silence && static::$role && static::$role !== $this->user->roles[0]) {
+        if (!$silence && static::$role && static::$role !== $this->user->roles[0]) {
             wp_die(
                 __('Construct user role is not correct, should be:', WCP_DOMAIN)
-                .static::$role
+                . static::$role
             );
         }
 
     }
 
     // 执行动态属性的读写为 user_meta 的读写
-    function __get($key) {
+    function __get($key)
+    {
         return get_user_meta($this->user->ID, $key, true);
     }
 
     // 执行动态属性的读写为 user_meta 的读写
-    function __set($key, $val) {
+    function __set($key, $val)
+    {
         update_user_meta($this->user->ID, $key, $val);
     }
 
-    function __toString() {
+    function __toString()
+    {
         return strval($this->user->display_name);
     }
 
-    static function init() {
+    static function init()
+    {
         $class = get_called_class();
-        add_action('init', function() use ($class) {
-            if(WP_DEBUG) {
+        add_action('init', function () use ($class) {
+            if (WP_DEBUG) {
                 // 调试模式下总是刷新角色
                 remove_role($class::$role);
             }
-            if(!get_role($class::$role)) {
+            if (!get_role($class::$role)) {
                 add_role(
                     $class::$role,
                     $class::$display_name,
@@ -528,18 +611,19 @@ class CustomUserType {
      * @param string $user_login
      * @param string $user_pass
      * @param string $user_email
-     * @param array $extra: Allowed keys :
+     * @param array $extra : Allowed keys :
      *      user_nicename | user_url | display_name | nickname |
      *      first_name | last_name | description | rich_editing |
      *      user_registered
      * @return CustomUserType|bool
      * @link https://codex.wordpress.org/Function_Reference/wp_insert_user
      */
-    static function create($user_login, $user_pass=null,
-                           $user_email=null, $extra=array()) {
+    static function create($user_login, $user_pass = null,
+                           $user_email = null, $extra = array())
+    {
 
         // 缺省自动生成 email 和密码
-        if(!$user_email) {
+        if (!$user_email) {
             preg_match('/^(?:https?:\/\/)?([^\/]+)/', home_url(), $match);
             $host = @$match[1] ?: 'wordpress.org';
             $user_email = "{$user_login}@{$host}";
@@ -551,7 +635,7 @@ class CustomUserType {
         ), $extra));
 
         // 如果用户创建成功，返回创建的 CustomUserType 对象
-        if(!is_wp_error($user)) {
+        if (!is_wp_error($user)) {
             return new static($user);
         } else {
             wp_die($user);
@@ -566,24 +650,26 @@ class CustomUserType {
      * @return array
      * @link: https://wordpress.org/search/get_users
      */
-    static function query($args=array(), $raw=false) {
+    static function query($args = array(), $raw = false)
+    {
         $args = array_merge($args, array(
             'role' => static::$role
         ));
         $users = get_users($args);
-        if($raw) {
+        if ($raw) {
             return $users;
         } else {
             $result = array();
-            foreach($users as $u) {
-                $result []= new static($u);
+            foreach ($users as $u) {
+                $result [] = new static($u);
             }
             return $result;
         }
     }
 
-    function delete() {
-        require_once( ABSPATH.'wp-admin/includes/user.php' );
+    function delete()
+    {
+        require_once(ABSPATH . 'wp-admin/includes/user.php');
         wp_delete_user($this->user->ID);
     }
 
@@ -594,7 +680,8 @@ class CustomUserType {
  * Class CustomP2PType
  * 自定义的 Posts 2 Posts 类型
  */
-class CustomP2PType {
+class CustomP2PType
+{
 
     // 配置属性，应在子类重写
 
@@ -609,8 +696,8 @@ class CustomP2PType {
     static $reciprocal = false;  // 是否对等关系（无向边）
     static $duplicate_connections = false;  // 是否支持重边
     static $fields = array();  // array(key => val) val: (str)title or
-        // array(title=>?, type=>?, values=>?, default=>?, default_cb=>(callback))
-        // @link: https://github.com/scribu/wp-posts-to-posts/wiki/Connection-metadata
+    // array(title=>?, type=>?, values=>?, default=>?, default_cb=>(callback))
+    // @link: https://github.com/scribu/wp-posts-to-posts/wiki/Connection-metadata
     static $admin_box = array(
         'show' => 'any',  // any | from | to
         'context' => 'side',  // side | advanced
@@ -627,7 +714,8 @@ class CustomP2PType {
      * 根据获取的 p2p 关联对象构造自定义
      * @param $object
      */
-    function __construct($object) {
+    function __construct($object)
+    {
         if (is_numeric($object) || is_string($object)) {
             $this->p2p_id = intval($object);
         } elseif (@$object->p2p_id) {
@@ -643,25 +731,28 @@ class CustomP2PType {
     }
 
     // 执行动态属性的读写为 p2p_meta 的读写
-    function __get($key) {
+    function __get($key)
+    {
         return p2p_get_meta($this->p2p_id, $key, true);
     }
 
     // 执行动态属性的读写为 p2p_meta 的读写
-    function __set($key, $val) {
+    function __set($key, $val)
+    {
         p2p_update_meta($this->p2p_id, $key, $val);
     }
 
     // Register the type
-    static function init() {
+    static function init()
+    {
 
-        if(!function_exists('p2p_register_connection_type')) {
+        if (!function_exists('p2p_register_connection_type')) {
             wp_die(__('Posts 2 Posts plugin is required.'));
         }
 
         $class = get_called_class();
 
-        add_action('p2p_init', function() use ($class) {
+        add_action('p2p_init', function () use ($class) {
 
             p2p_register_connection_type(array(
                 'name' => $class::$p2p_type,
@@ -688,9 +779,10 @@ class CustomP2PType {
      * @param $obj WP_Post|WP_User|CustomPost|CustomUserType
      * @return WP_Post|WP_User
      */
-    static function extract($obj) {
-        if($obj instanceof CustomPost) return $obj->post;
-        if($obj instanceof CustomUserType) return $obj->user;
+    static function extract($obj)
+    {
+        if ($obj instanceof CustomPost) return $obj->post;
+        if ($obj instanceof CustomUserType) return $obj->user;
         return $obj;
     }
 
@@ -701,7 +793,8 @@ class CustomP2PType {
      * @param $to
      * @return bool|CustomP2PType
      */
-    static function get($from, $to) {
+    static function get($from, $to)
+    {
         $p2p_id = static::getType()->get_p2p_id(
             static::extract($from),
             static::extract($to)
@@ -712,11 +805,13 @@ class CustomP2PType {
     /**
      * @return bool|object
      */
-    static function getType() {
+    static function getType()
+    {
         return p2p_type(static::$p2p_type);
     }
 
-    static function connect($from, $to, $data=array()) {
+    static function connect($from, $to, $data = array())
+    {
         static::getType()->connect(
             static::extract($from),
             static::extract($to),
@@ -724,7 +819,8 @@ class CustomP2PType {
         );
     }
 
-    static function disconnect($from, $to) {
+    static function disconnect($from, $to)
+    {
         static::getType()->disconnect(
             static::extract($from),
             static::extract($to)
@@ -737,8 +833,9 @@ class CustomP2PType {
      * @param $direction
      * @return array: resulting CustomP2PType object list.
      */
-    static function getList($item, $direction='auto', $connected_meta=array()) {
-        if(!in_array($direction, array('from', 'to'))) {
+    static function getList($item, $direction = 'auto', $connected_meta = array())
+    {
+        if (!in_array($direction, array('from', 'to'))) {
             $to_class = static::$to_class;
             $direction = $item instanceof $to_class ? 'to' : 'from';
         }
@@ -749,16 +846,17 @@ class CustomP2PType {
             'connected_items' => static::extract($item),
             'connected_direction' => $direction,
             'connected_meta' => $connected_meta,
-            'posts_per_page' =>  -1,
+            'posts_per_page' => -1,
         ));
         $result = array();
-        foreach($items as $item) {
-            $result []= new static(static::extract($item)->p2p_id);
+        foreach ($items as $item) {
+            $result [] = new static(static::extract($item)->p2p_id);
         }
         return $result;
     }
 
-    function delete() {
+    function delete()
+    {
         static::disconnect($this->from, $this->to);
     }
 
@@ -777,21 +875,30 @@ class CustomP2PType {
 //Customer::init();
 
 // 提供方便的接口
-class Page extends CustomPost {
+class Page extends CustomPost
+{
     static $post_type = 'page';
-};
+}
+
+;
 
 
 /**
  * Class Category
  */
-class Category extends CustomTaxonomy {
+class Category extends CustomTaxonomy
+{
     static $taxonomy = 'category';
-};
+}
+
+;
 
 /**
  * Class PostTag
  */
-class PostTag extends CustomTaxonomy {
+class PostTag extends CustomTaxonomy
+{
     static $taxonomy = 'post_tag';
-};
+}
+
+;
