@@ -301,7 +301,7 @@ class CustomPost
      * 列表查询
      * @param array $args
      * @param bool|false $raw
-     * @return static[]
+     * @return self[]
      * @link: https://wordpress.org/search/get_posts
      */
     static function query($args = array(), $raw = false)
@@ -533,7 +533,6 @@ class CustomTaxonomy
 
 }
 
-;
 
 /**
  * Class CustomUserType
@@ -647,7 +646,7 @@ class CustomUserType
      * 查询出一个用户对象的列表
      * @param array $args
      * @param bool|false $raw
-     * @return array
+     * @return self[]
      * @link: https://wordpress.org/search/get_users
      */
     static function query($args = array(), $raw = false)
@@ -671,6 +670,62 @@ class CustomUserType
     {
         require_once(ABSPATH . 'wp-admin/includes/user.php');
         wp_delete_user($this->user->ID);
+    }
+
+
+    /**
+     * 获取当前登录的会员用户，没有的话返回 false
+     * @return self|false
+     */
+    static function get_current()
+    {
+
+        // 当前登录的用户
+        $user = wp_get_current_user();
+
+        // 如果没有登录或者角色不是当前的类型，都返回 false
+        if (!$user || static::$role && !in_array(static::$role, $user->roles)) return false;
+
+        // 获取当前的用户对象
+        return new static($user);
+
+    }
+
+
+    /**
+     * 获取当前类型的会员用户，没有的话跳转到登录页面
+     * @return self
+     */
+    static function require_login()
+    {
+        $user = static::get_current();
+        if (!$user) {
+            ob_clean();
+            wp_redirect(wp_login_url($_SERVER['REQUEST_URI']));
+            exit;
+        }
+        return $user;
+    }
+
+
+    /**
+     * 登录当前的用户
+     * @ref http://wordpress.stackexchange.com/a/128445/85201
+     */
+    function login()
+    {
+        wp_clear_auth_cookie();
+        wp_set_current_user($this->user->ID);
+        wp_set_auth_cookie($this->user->ID);
+    }
+
+    /**
+     * 设置当前用户的密码
+     * @param $new_password
+     */
+    function change_password($new_password)
+    {
+        reset_password($this->user, $new_password);
     }
 
 }
@@ -880,7 +935,6 @@ class Page extends CustomPost
     static $post_type = 'page';
 }
 
-;
 
 
 /**
@@ -891,7 +945,6 @@ class Category extends CustomTaxonomy
     static $taxonomy = 'category';
 }
 
-;
 
 /**
  * Class PostTag
@@ -900,5 +953,3 @@ class PostTag extends CustomTaxonomy
 {
     static $taxonomy = 'post_tag';
 }
-
-;
