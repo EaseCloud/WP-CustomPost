@@ -890,7 +890,7 @@ class CustomP2PType
      * Return a list of connection objects from a related object.
      * @param $item
      * @param $direction
-     * @return array: resulting CustomP2PType object list.
+     * @return CustomP2PType[]: resulting CustomP2PType object list.
      */
     static function getList($item, $direction = 'auto', $connected_meta = array())
     {
