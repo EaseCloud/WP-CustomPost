@@ -882,6 +882,10 @@ class CustomP2PType
         );
     }
 
+    function unlink() {
+        static::disconnect($this->from, $this->to);
+    }
+
     /**
      * Return a list of connection objects from a related object.
      * @param $item
