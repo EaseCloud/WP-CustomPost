@@ -76,9 +76,8 @@ class CustomPost
     // 执行动态属性的读写为 post_meta 的读写
     function __get($key)
     {
-        $value = get_post_meta($this->post->ID, $key, true);
-        if ($value === null) $value = @$this->post->$key;
-        return $value;
+        return isset($this->post->$key) ? $this->post->$key :
+            get_post_meta($this->post->ID, $key, true);
     }
 
     // 执行动态属性的读写为 post_meta 的读写
@@ -573,9 +572,8 @@ class CustomUserType
     // 执行动态属性的读写为 user_meta 的读写
     function __get($key)
     {
-        $result = get_user_meta($this->user->ID, $key, true);
-        if($result === null) $result = @$this->user->$key;
-        return $result;
+        return isset($this->user->$key) ? $this->user->$key :
+            get_user_meta($this->user->ID, $key, true);
     }
 
     // 执行动态属性的读写为 user_meta 的读写
@@ -977,12 +975,12 @@ class ACFFieldGroup extends CustomPost
      */
     function getField($field_name = null)
     {
-        if(!$this->fields) {
+        if (!$this->fields) {
             $this->fields = ACFField::query(array(
                 'posts_per_page' => -1,
                 'post_parent' => $this->post->ID,
             ));
-            foreach($this->fields as &$field) {
+            foreach ($this->fields as &$field) {
                 $this->__fields[$field->name] = &$field;
             }
         }
@@ -1066,7 +1064,8 @@ class ACFField extends CustomPost
     public $name = '';  // 字段关键字
     public $key = '';  // 字段内置编号
 
-    function __construct($post, $silence = false) {
+    function __construct($post, $silence = false)
+    {
         parent::__construct($post, $silence);
         $this->__content = unserialize($this->post->post_content);
         $this->key = $this->post->post_name;
@@ -1079,7 +1078,8 @@ class ACFField extends CustomPost
      * @param bool|false $raw
      * @return self[]|WP_Post[]
      */
-    static function query($args=array(), $raw=false) {
+    static function query($args = array(), $raw = false)
+    {
         return parent::query($args, $raw);
     }
 
@@ -1102,8 +1102,9 @@ class ACFField extends CustomPost
      * @param $key
      * @return mixed
      */
-    function __get($key) {
-        if(isset($this->__content[$key])) {
+    function __get($key)
+    {
+        if (isset($this->__content[$key])) {
             return $this->__content[$key];
         }
         return parent::__get($key);
@@ -1116,12 +1117,12 @@ class ACFField extends CustomPost
      */
     function getSubField($field_name = null)
     {
-        if(!$this->fields) {
+        if (!$this->fields) {
             $this->fields = ACFField::query(array(
                 'posts_per_page' => -1,
                 'post_parent' => $this->post->ID,
             ));
-            foreach($this->fields as &$field) {
+            foreach ($this->fields as &$field) {
                 $this->__fields[$field->name] = &$field;
             }
         }
