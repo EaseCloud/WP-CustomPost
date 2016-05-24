@@ -301,7 +301,7 @@ class CustomPost
      * 列表查询
      * @param array $args
      * @param bool|false $raw
-     * @return self[]
+     * @return self[]|WP_Post[]
      * @link: https://wordpress.org/search/get_posts
      */
     static function query($args = array(), $raw = false)
@@ -573,7 +573,9 @@ class CustomUserType
     // 执行动态属性的读写为 user_meta 的读写
     function __get($key)
     {
-        return get_user_meta($this->user->ID, $key, true);
+        $result = get_user_meta($this->user->ID, $key, true);
+        if($result === null) $result = @$this->user->$key;
+        return $result;
     }
 
     // 执行动态属性的读写为 user_meta 的读写
@@ -882,7 +884,8 @@ class CustomP2PType
         );
     }
 
-    function unlink() {
+    function unlink()
+    {
         static::disconnect($this->from, $this->to);
     }
 
@@ -940,7 +943,6 @@ class Page extends CustomPost
 }
 
 
-
 /**
  * Class Category
  */
@@ -956,4 +958,174 @@ class Category extends CustomTaxonomy
 class PostTag extends CustomTaxonomy
 {
     static $taxonomy = 'post_tag';
+}
+
+/**
+ * Class ACFFieldGroup
+ */
+class ACFFieldGroup extends CustomPost
+{
+    static $post_type = 'acf-field-group';
+
+    public $fields = null;
+    public $__fields = array();
+
+    /**
+     * 获取定义的 ACFField 对象
+     * @param $field_name string|null 如果为空，直接返回所有，否则返回指定的对象
+     * @return ACFField[]|ACFField|null
+     */
+    function getField($field_name = null)
+    {
+        if(!$this->fields) {
+            $this->fields = ACFField::query(array(
+                'posts_per_page' => -1,
+                'post_parent' => $this->post->ID,
+            ));
+            foreach($this->fields as &$field) {
+                $this->__fields[$field->name] = &$field;
+            }
+        }
+        return $field_name ? $this->__fields[$field_name] : $this->fields;
+    }
+
+    /**
+     * 返回绑定到某个 role 的 ACF 字段组列表
+     * @param $post_type
+     * @return self[]
+     */
+    static function getListFromPostType($post_type)
+    {
+        $result = array();
+        foreach (static::query(array('posts_per_page' => -1)) as &$acf) {
+            $data = @unserialize($acf->post->post_content);
+            if (!$data && @$data['location']) continue;
+            $is_match = false;
+            foreach ($data['location'] as &$rule) {
+                if ($rule[0]['param'] == 'post_type') {
+                    if ($rule[0]['value'] == $post_type && $rule[0]['operator'] == '==') {
+                        $is_match = true;
+                        break;
+                    }
+                    if ($rule[0]['value'] == $post_type && $rule[0]['operator'] == '!=') {
+                        $is_match = false;
+                        break;
+                    }
+                }
+            }
+            if ($is_match) $result [] = &$acf;
+        }
+        return $result;
+    }
+
+    /**
+     * 返回绑定到某个 role 的 ACF 字段组列表
+     * @param $role
+     * @return self[]
+     */
+    static function getListFromRole($role)
+    {
+        $result = array();
+        foreach (static::query(array('posts_per_page' => -1)) as &$acf) {
+            $data = @unserialize($acf->post->post_content);
+            if (!$data && @$data['location']) continue;
+            $is_match = false;
+            foreach ($data['location'] as &$rule) {
+                if ($rule[0]['param'] == 'user_role') {
+                    if ($rule[0]['value'] == $role && $rule[0]['operator'] == '==') {
+                        $is_match = true;
+                        break;
+                    }
+                    if ($rule[0]['value'] == $role && $rule[0]['operator'] == '!=') {
+                        $is_match = false;
+                        break;
+                    }
+                }
+            }
+            if ($is_match) $result [] = &$acf;
+        }
+        return $result;
+    }
+
+}
+
+/**
+ * Class ACFField
+ */
+class ACFField extends CustomPost
+{
+
+    static $post_type = 'acf-field';
+
+    public $fields = null;
+    public $__fields = array();
+
+    public $__content = array();
+
+    public $title = '';  // 字段显示名称
+    public $name = '';  // 字段关键字
+    public $key = '';  // 字段内置编号
+
+    function __construct($post, $silence = false) {
+        parent::__construct($post, $silence);
+        $this->__content = unserialize($this->post->post_content);
+        $this->key = $this->post->post_name;
+        $this->name = $this->post->post_excerpt;
+        $this->title = $this->post->post_title;
+    }
+
+    /**
+     * @param array $args
+     * @param bool|false $raw
+     * @return self[]|WP_Post[]
+     */
+    static function query($args=array(), $raw=false) {
+        return parent::query($args, $raw);
+    }
+
+    /**
+     * 获取字段的选项值，优先从字段配置中读取，支持的参数有：
+     *
+     * - choices: 选项
+     * - type: 字段类型
+     * - instructions: 字段说明
+     * - required: 0/1 是否必填
+     * - default_value: 默认值
+     * - allow_null: 是否可空
+     * - disabled: 是否禁用
+     * - placeholder: 占位字符
+     * - readonly: 是否只读
+     * - multiple: 是否多选
+     *
+     * 还有其他诸如 ajax / conditional_logic / ui / wrapper 等不常用
+     *
+     * @param $key
+     * @return mixed
+     */
+    function __get($key) {
+        if(isset($this->__content[$key])) {
+            return $this->__content[$key];
+        }
+        return parent::__get($key);
+    }
+
+    /**
+     * 获取子字段 ACFField 对象
+     * @param $field_name string|null 如果为空，直接返回所有，否则返回指定的对象
+     * @return ACFField[]|ACFField|null
+     */
+    function getSubField($field_name = null)
+    {
+        if(!$this->fields) {
+            $this->fields = ACFField::query(array(
+                'posts_per_page' => -1,
+                'post_parent' => $this->post->ID,
+            ));
+            foreach($this->fields as &$field) {
+                $this->__fields[$field->name] = &$field;
+            }
+        }
+        return $field_name ? $this->__fields[$field_name] : $this->fields;
+    }
+
 }
