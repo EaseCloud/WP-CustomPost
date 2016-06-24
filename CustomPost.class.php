@@ -487,7 +487,7 @@ class CustomUserType {
      * @return bool|static
      */
     static function get_current() {
-        $me = @new static(get_current_user(), true);
+        $me = @new static(wp_get_current_user(), true);
         if($me->user->roles[0] !== static::$role) {
             return false;
         }
