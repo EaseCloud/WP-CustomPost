@@ -148,7 +148,7 @@ class CustomPost
     }
 
     // 初始化脚本，完成 post_type 注册等工作，派生该类之后，如果需要使用必须手动先执行一次
-    public static function init()
+    static function init()
     {
 
         // 需要获取调用的子类
@@ -275,7 +275,6 @@ class CustomPost
 
     }
 
-
     /**
      * 返回当前 post 对象是否具备某一个 term
      * @param $term
@@ -292,6 +291,13 @@ class CustomPost
         return false;
     }
 
+    /**
+     * 获取当前文章的超链接
+     */
+    function getPermalink()
+    {
+        return get_the_permalink($this->$post);
+    }
 
     /**
      * 列表查询
@@ -425,7 +431,7 @@ class CustomTaxonomy
     /**
      * 初始化脚本，完成 taxonomy 注册等工作，派生该类之后，如果需要使用必须手动先执行一次
      */
-    public static function init()
+    static function init()
     {
 
         // 需要获取调用的子类
@@ -465,7 +471,7 @@ class CustomTaxonomy
      * 返回当前定义的 Taxonomy 的所有实例
      * @return CustomTaxonomy[]
      */
-    public static function all()
+    static function all()
     {
         $cls = get_called_class();
         return array_map(function ($term) use ($cls) {
@@ -607,6 +613,14 @@ class CustomUserType
                 );
             }
         });
+    }
+
+    /**
+     * 获取当前用户的超链接
+     */
+    function getPermalink()
+    {
+        return get_author_posts_url($this->user->ID);
     }
 
     /**
