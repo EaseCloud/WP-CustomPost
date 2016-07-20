@@ -147,6 +147,10 @@ class CustomPost
         return $img[0];
     }
 
+    static function getArchiveUrl() {
+        return get_post_type_archive_link(static::$post_type);
+    }
+
     // 初始化脚本，完成 post_type 注册等工作，派生该类之后，如果需要使用必须手动先执行一次
     static function init()
     {
@@ -296,7 +300,7 @@ class CustomPost
      */
     function getPermalink()
     {
-        return get_the_permalink($this->$post);
+        return get_the_permalink($this->post);
     }
 
     /**
@@ -961,6 +965,16 @@ class CustomP2PType
 class Page extends CustomPost
 {
     static $post_type = 'page';
+
+    /**
+     * 根据 slug > title > ID 的优先级动态生成页面的链接
+     * @param $key
+     * @return false|string
+     */
+    static function url($key) {
+        $page = get_page_by_path($key) ?: get_page_by_title($key);
+        return @get_the_permalink($page ?: $key);
+    }
 }
 
 /**
