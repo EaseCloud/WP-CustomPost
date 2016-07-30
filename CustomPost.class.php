@@ -907,7 +907,7 @@ class CustomP2PType
 
     function unlink()
     {
-        static::disconnect($this->from, $this->to);
+        p2p_delete_connection($this->p2p_id);
     }
 
     /**
