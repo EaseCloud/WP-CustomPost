@@ -79,13 +79,33 @@ class CustomPost
     function __get($key)
     {
         return isset($this->post->$key) ? $this->post->$key :
-            get_post_meta($this->post->ID, $key, true);
+            get_field($key, $this->post->ID);
     }
 
     // 执行动态属性的读写为 post_meta 的读写
     function __set($key, $val)
     {
-        update_post_meta($this->post->ID, $key, $val);
+        update_post_meta($this->ID, $key, $val);
+
+        // 更新类型
+        $type = static::getFieldType($key);
+        if ($type) update_post_meta($this->ID, "_$key", $type);
+    }
+
+    /**
+     * 获取 ACF 字段的类型编码
+     * @param $field_name
+     * @return string 字段
+     */
+    static function getFieldType($field_name)
+    {
+        foreach (ACFFieldGroup::getListFromPostType(static::$post_type) as $acf) {
+            $field = $acf->getField($field_name);
+            if ($field) {
+                return $field->key;
+            }
+        }
+        return false;
     }
 
     /**
@@ -147,7 +167,8 @@ class CustomPost
         return $img[0];
     }
 
-    static function getArchiveUrl() {
+    static function getArchiveUrl()
+    {
         return get_post_type_archive_link(static::$post_type);
     }
 
@@ -587,13 +608,33 @@ class CustomUserType
     function __get($key)
     {
         return isset($this->user->$key) ? $this->user->$key :
-            get_user_meta($this->user->ID, $key, true);
+            get_field($key, "user_{$this->user->ID}");
     }
 
     // 执行动态属性的读写为 user_meta 的读写
     function __set($key, $val)
     {
         update_user_meta($this->user->ID, $key, $val);
+
+        // 更新类型
+        $type = static::getFieldType($key);
+        if ($type) update_user_meta($this->ID, "_$key", $type);
+    }
+
+    /**
+     * 获取 ACF 字段的类型编码
+     * @param $field_name
+     * @return string 字段
+     */
+    static function getFieldType($field_name)
+    {
+        foreach (ACFFieldGroup::getListFromRole(static::$role) as $acf) {
+            $field = $acf->getField($field_name);
+            if ($field) {
+                return $field->key;
+            }
+        }
+        return false;
     }
 
     function __toString()
@@ -971,7 +1012,8 @@ class Page extends CustomPost
      * @param $key
      * @return false|string
      */
-    static function url($key) {
+    static function url($key)
+    {
         $page = get_page_by_path($key) ?: get_page_by_title($key);
         return @get_the_permalink($page ?: $key);
     }
@@ -1018,13 +1060,13 @@ class ACFFieldGroup extends CustomPost
                 $this->__fields[$field->name] = &$field;
             }
         }
-        return $field_name ? $this->__fields[$field_name] : $this->fields;
+        return $field_name ? @$this->__fields[$field_name] : $this->fields;
     }
 
     /**
      * 返回绑定到某个 role 的 ACF 字段组列表
      * @param $post_type
-     * @return self[]
+     * @return ACFFieldGroup[]
      */
     static function getListFromPostType($post_type)
     {
