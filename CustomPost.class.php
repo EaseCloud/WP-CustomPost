@@ -746,7 +746,7 @@ class CustomUserType
         $user = wp_get_current_user();
 
         // 如果没有登录或者角色不是当前的类型，都返回 false
-        if ($user && in_array(@static::$role, $user->roles)) {
+        if ($user && (!static::$role || in_array(@static::$role, $user->roles))) {
             // 返回当前的用户对象
             return new static($user);
         } else {
