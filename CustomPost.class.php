@@ -17,6 +17,31 @@ class CustomPost
     public static $menu_icon = 'dashicons-admin-post';
     public static $capabilities = array();
 
+    const BUILTIN_FIELDS = array(
+        'post_author',
+        'post_date',
+        'post_date_gmt',
+        'post_content',
+        'post_content_filtered',
+        'post_title',
+        'post_excerpt',
+        'post_status',
+        'post_type',
+        'comment_status',
+        'post_password',
+        'post_name',
+        'to_ping',
+        'pinged',
+        'post_modified',
+        'post_modified_gmt',
+        'post_parent',
+        'menu_order',
+        'post_mime_type',
+        'guid',
+        'text_input',
+        'meta_input',
+    );
+
     // 实有成员
 
     public $post;
@@ -85,6 +110,14 @@ class CustomPost
     // 执行动态属性的读写为 post_meta 的读写
     function __set($key, $val)
     {
+        if (in_array($key, static::BUILTIN_FIELDS)) {
+            wp_update_post(array(
+                'ID' => $this->ID,
+                $key => $val,
+            ));
+            return;
+        }
+
         update_post_meta($this->ID, $key, $val);
 
         // 更新类型
