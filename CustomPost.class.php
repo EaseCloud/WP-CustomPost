@@ -758,14 +758,15 @@ class CustomUserType
 
     /**
      * 获取当前类型的会员用户，没有的话跳转到登录页面
+     * @param string|bool $login_url 另行指定的登录页面
      * @return self
      */
-    static function require_login()
+    static function require_login($login_url = false)
     {
         $user = static::get_current();
         if (!$user) {
             ob_clean();
-            wp_redirect(wp_login_url($_SERVER['REQUEST_URI']));
+            wp_redirect($login_url ?: wp_login_url($_SERVER['REQUEST_URI']));
             exit;
         }
         return $user;
