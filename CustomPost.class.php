@@ -17,7 +17,7 @@ class CustomPost
     public static $menu_icon = 'dashicons-admin-post';
     public static $capabilities = array();
 
-    const BUILTIN_FIELDS = array(
+    public static $builtin_fields = array(
         'post_author',
         'post_date',
         'post_date_gmt',
@@ -110,7 +110,7 @@ class CustomPost
     // 执行动态属性的读写为 post_meta 的读写
     function __set($key, $val)
     {
-        if (in_array($key, static::BUILTIN_FIELDS)) {
+        if (in_array($key, static::$builtin_fields)) {
             wp_update_post(array(
                 'ID' => $this->ID,
                 $key => $val,
