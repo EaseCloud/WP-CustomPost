@@ -691,6 +691,13 @@ class CustomUserType
                 );
             }
         });
+        /**
+         * 微信头像
+         */
+        add_filter('get_avatar', function ($avatar, $user_id, $size) {
+            $src = @get_user_meta($user_id, 'avatar', true);
+            return $src ? "<img src=\"$src\" width=\"$size\" />" : $avatar;
+        }, 18, 3);
     }
 
     /**
@@ -825,7 +832,69 @@ class CustomUserType
         reset_password($this->user, $new_password);
     }
 
+    /**
+     * Make user bind with wechat.
+     * 1. If not logined, load wechat info and find matching user, then login.
+     * 2. If no matching user, register one with wechat info.
+     * 3. If is logined at the beginning, and no wechat bound, bound with the info.
+     * 4. If is logined at the beginning and wechat bounded, ignore.
+     * @return self|false the user authenticated
+     */
+    static function wechat_load_user()
+    {
+        if (!class_exists('WP_Wechat')) return false;
 
+        $wechat = new WP_Wechat();
+        if (!$wechat->is_wechat()) return false;
+
+        $me = static::get_current();
+        // Case 4
+        if ($me && $me->openid) return $me;
+
+        $ticket = @$_GET['ticket'];
+        // 没有 ticket 跳转获取用户信息接口
+        if (!$ticket) {
+            wp_redirect(
+                "{$wechat->auth_server}/auth/{$wechat->app_id}/"
+                . '?redirect_uri=' . home_url($_SERVER['REQUEST_URI']));
+            exit;
+        }
+
+        // 获取用户信息
+        $userinfo = @json_decode(file_get_contents("{$wechat->auth_server}/ticket/$ticket/"));
+
+        if (!$userinfo) wp_die('获取微信用户信息失败');
+
+        if ($me) {
+            // Case 3
+            foreach ($userinfo as $key => $value) {
+                $me->$key = $value;
+            }
+            return $me;
+        }
+        $users = static::query(array(
+            'meta_key' => 'openid',
+            'meta_value' => $userinfo->openid,
+        ));
+        $me = @$users[0];
+        // Case 2
+        if (!$me) {
+            $me = static::create(
+                @$userinfo->openid, null, null,
+                array(
+                    'nickname' => $userinfo->nickname,
+                    'first_name' => $userinfo->nickname,
+                    'user_nicename' => $userinfo->nickname,
+                    'display_name' => $userinfo->nickname,
+                )
+            );
+            foreach ($userinfo as $key => $value) {
+                $me->$key = $value;
+            }
+        }
+        $me->login();
+        return $me;
+    }
 }
 
 
