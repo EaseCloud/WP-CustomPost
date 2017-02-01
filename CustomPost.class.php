@@ -103,8 +103,10 @@ class CustomPost
     // 执行动态属性的读写为 post_meta 的读写
     function __get($key)
     {
-        return isset($this->post->$key) ? $this->post->$key :
-            get_field($key, $this->post->ID);
+        // 破坏性更新，可能会导致旧版接口不兼容
+        return @get_field($key, $this->post->ID) ?: @$this->post->$key;
+//        return isset($this->post->$key) ? $this->post->$key :
+//            get_field($key, $this->post->ID);
     }
 
     // 执行动态属性的读写为 post_meta 的读写
