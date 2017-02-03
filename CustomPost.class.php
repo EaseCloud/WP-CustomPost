@@ -13,7 +13,7 @@ class CustomPost
     public static $post_type_name_plural;
     public static $post_type_description = '';
     public static $post_type_supports =
-        array('title', 'thumbnail', 'excerpt', 'editor', 'comments');
+        array('title', 'thumbnail', 'excerpt', 'editor', 'comments', 'author');
     public static $menu_icon = 'dashicons-admin-post';
     public static $capabilities = array();
 
@@ -150,17 +150,18 @@ class CustomPost
      * @param string $content
      * @param array $meta_fields
      * @param string $status
+     * @param array $postarr
      * @return CustomPost 返回插入成功之后的对象
      */
-    static function insert($title, $slug, $content, $meta_fields, $status = 'publish')
+    static function insert($title, $slug, $content, $meta_fields, $status = 'publish', $postarr = array())
     {
-        $post_id = wp_insert_post(array(
+        $post_id = wp_insert_post(array_merge(array(
             'post_title' => $title,
             'post_name' => $slug,
             'post_content' => $content,
             'post_type' => static::$post_type,
             'post_status' => $status,
-        ));
+        ), $postarr));
         if (is_wp_error($post_id)) wp_die($post_id);
         $result = new static($post_id);
         foreach ($meta_fields as $key => $val) {
@@ -971,7 +972,9 @@ class CustomP2PType
     {
 
         if (!function_exists('p2p_register_connection_type')) {
-            wp_die(__('Posts 2 Posts plugin is required.'));
+            echo 'Posts 2 Posts plugin is required.';
+            // wp_die(__('Posts 2 Posts plugin is required.'));
+            return;
         }
 
         $class = get_called_class();
@@ -1034,13 +1037,21 @@ class CustomP2PType
         return p2p_type(static::$p2p_type);
     }
 
+    /**
+     * 连接两个对象，并且返回构造的 CustomP2P 对象
+     * @param $from
+     * @param $to
+     * @param array $data
+     * @return bool|self
+     */
     static function connect($from, $to, $data = array())
     {
-        static::getType()->connect(
+        $p2p_id = static::getType()->connect(
             static::extract($from),
             static::extract($to),
             $data
         );
+        return is_wp_error($p2p_id) ? false : new static($p2p_id);
     }
 
     static function disconnect($from, $to)
