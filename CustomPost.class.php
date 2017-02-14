@@ -384,6 +384,11 @@ class CustomPost
         }
     }
 
+    function delete()
+    {
+        wp_delete_post($this->ID);
+    }
+
 }
 
 
