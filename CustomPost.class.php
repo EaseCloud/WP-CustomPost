@@ -603,7 +603,6 @@ class CustomTaxonomy
 
 }
 
-;
 
 /**
  * Class CustomUserType
@@ -862,9 +861,8 @@ class CustomUserType
         $ticket = @$_GET['ticket'];
         // 没有 ticket 跳转获取用户信息接口
         if (!$ticket) {
-            wp_redirect(
-                "{$wechat->auth_server}/auth/{$wechat->app_id}/"
-                . '?redirect_uri=' . home_url($_SERVER['REQUEST_URI']));
+            wp_redirect("{$wechat->auth_server}/auth/{$wechat->app_id}/");
+//                . '?redirect_uri=' .  home_url($_SERVER['REQUEST_URI']));
             exit;
         }
 
