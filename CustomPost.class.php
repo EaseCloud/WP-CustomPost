@@ -861,9 +861,9 @@ class CustomUserType
         $ticket = @$_GET['ticket'];
         // 没有 ticket 跳转获取用户信息接口
         if (!$ticket) {
-            wp_redirect("{$wechat->auth_server}/auth/{$wechat->app_id}/");
+            exit("<script>location = '{$wechat->auth_server}/auth/{$wechat->app_id}/'</script>");
 //                . '?redirect_uri=' .  home_url($_SERVER['REQUEST_URI']));
-            exit;
+//            exit;
         }
 
         // 获取用户信息
